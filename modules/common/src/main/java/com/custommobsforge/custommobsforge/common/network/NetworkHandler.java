@@ -30,17 +30,71 @@ public class NetworkHandler {
     private static int packetId = 0;
 
     public static void register() {
-        CHANNEL.registerMessage(packetId++, OpenGuiPacket.class, OpenGuiPacket::write, OpenGuiPacket::new, OpenGuiPacket::handle, NetworkDirection.PLAY_TO_CLIENT);
-        CHANNEL.registerMessage(packetId++, SpawnMobPacket.class, SpawnMobPacket::write, SpawnMobPacket::new, SpawnMobPacket::handle, NetworkDirection.PLAY_TO_SERVER);
-        CHANNEL.registerMessage(packetId++, RequestPresetsPacket.class, RequestPresetsPacket::write, RequestPresetsPacket::new, RequestPresetsPacket::handle, NetworkDirection.PLAY_TO_SERVER);
-        CHANNEL.registerMessage(packetId++, PresetSyncPacket.class, PresetSyncPacket::write, PresetSyncPacket::new, PresetSyncPacket::handle, NetworkDirection.PLAY_TO_CLIENT);
-        CHANNEL.registerMessage(packetId++, PresetCreatePacket.class, PresetCreatePacket::write, PresetCreatePacket::new, PresetCreatePacket::handle, NetworkDirection.PLAY_TO_SERVER);
-        CHANNEL.registerMessage(packetId++, PresetEditPacket.class, PresetEditPacket::write, PresetEditPacket::new, PresetEditPacket::handle, NetworkDirection.PLAY_TO_SERVER);
-        CHANNEL.registerMessage(packetId++, PresetDeletePacket.class, PresetDeletePacket::write, PresetDeletePacket::new, PresetDeletePacket::handle, NetworkDirection.PLAY_TO_SERVER);
-        CHANNEL.registerMessage(packetId++, ResourceListRequestPacket.class, ResourceListRequestPacket::write, ResourceListRequestPacket::new, ResourceListRequestPacket::handle, NetworkDirection.PLAY_TO_SERVER);
-        CHANNEL.registerMessage(packetId++, ResourceListResponsePacket.class, ResourceListResponsePacket::write, ResourceListResponsePacket::new, ResourceListResponsePacket::handle, NetworkDirection.PLAY_TO_CLIENT);
-        CHANNEL.registerMessage(packetId++, ValidateResourcesPacket.class, ValidateResourcesPacket::write, ValidateResourcesPacket::new, ValidateResourcesPacket::handle, NetworkDirection.PLAY_TO_SERVER);
-        CHANNEL.registerMessage(packetId++, ResourceValidationResponsePacket.class, ResourceValidationResponsePacket::write, ResourceValidationResponsePacket::new, ResourceValidationResponsePacket::handle, NetworkDirection.PLAY_TO_CLIENT);
+        CHANNEL.messageBuilder(OpenGuiPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(OpenGuiPacket::new)
+                .encoder(OpenGuiPacket::write)
+                .consumerMainThread(OpenGuiPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(SpawnMobPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(SpawnMobPacket::new)
+                .encoder(SpawnMobPacket::write)
+                .consumerMainThread(SpawnMobPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(RequestPresetsPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(RequestPresetsPacket::new)
+                .encoder(RequestPresetsPacket::write)
+                .consumerMainThread(RequestPresetsPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(PresetSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(PresetSyncPacket::new)
+                .encoder(PresetSyncPacket::write)
+                .consumerMainThread(PresetSyncPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(PresetCreatePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(PresetCreatePacket::new)
+                .encoder(PresetCreatePacket::write)
+                .consumerMainThread(PresetCreatePacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(PresetEditPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(PresetEditPacket::new)
+                .encoder(PresetEditPacket::write)
+                .consumerMainThread(PresetEditPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(PresetDeletePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(PresetDeletePacket::new)
+                .encoder(PresetDeletePacket::write)
+                .consumerMainThread(PresetDeletePacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(ResourceListRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(ResourceListRequestPacket::new)
+                .encoder(ResourceListRequestPacket::write)
+                .consumerMainThread(ResourceListRequestPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(ResourceListResponsePacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(ResourceListResponsePacket::new)
+                .encoder(ResourceListResponsePacket::write)
+                .consumerMainThread(ResourceListResponsePacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(ValidateResourcesPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(ValidateResourcesPacket::new)
+                .encoder(ValidateResourcesPacket::write)
+                .consumerMainThread(ValidateResourcesPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(ResourceValidationResponsePacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(ResourceValidationResponsePacket::new)
+                .encoder(ResourceValidationResponsePacket::write)
+                .consumerMainThread(ResourceValidationResponsePacket::handle)
+                .add();
     }
 
     public static void registerServerHandlers() {
@@ -234,7 +288,7 @@ public class NetworkHandler {
     }
 
     public static void sendToPlayer(Object packet, ServerPlayer player) {
-        CHANNEL.sendTo(packet, player.connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT);
+        CHANNEL.sendTo(packet, player.connection, NetworkDirection.PLAY_TO_CLIENT);
     }
 
     public static void sendToServer(Object packet) {

@@ -1,115 +1,161 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
-import com.custommobsforge.custommobsforge.common.network.NetworkHandler;
-import com.custommobsforge.custommobsforge.common.network.PresetCreatePacket;
-import com.custommobsforge.custommobsforge.common.network.PresetEditPacket;
-import com.custommobsforge.custommobsforge.common.network.ValidateResourcesPacket;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import com.custommobsforge.custommobsforge.common.network.*;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.ErrorScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.client.gui.widget.ForgeSlider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PresetEditorScreen extends Screen {
-    private static final Logger LOGGER = LogManager.getLogger();
-    public EditBox nameField; // Сделали public
-    public ForgeSlider healthSlider; // Сделали public
-    public ForgeSlider speedSlider; // Сделали public
-    public EditBox modelField; // Сделали public
-    public EditBox textureField; // Сделали public
-    public EditBox animationField; // Сделали public
+    private final boolean createMode;
+    private EditBox nameField;
+    private EditBox healthField;
+    private EditBox speedField;
+    private EditBox modelField;
+    private EditBox textureField;
+    private EditBox animationField;
+    private List<String> models = new ArrayList<>();
+    private List<String> textures = new ArrayList<>();
+    private List<String> animations = new ArrayList<>();
 
-    public PresetEditorScreen() {
-        super(Component.literal("Edit Preset"));
+    public PresetEditorScreen(boolean createMode) {
+        super(Component.literal(createMode ? "Create Preset" : "Edit Preset"));
+        this.createMode = createMode;
     }
 
     @Override
     protected void init() {
-        super.init();
         int centerX = this.width / 2;
-        int startY = this.height / 4;
-        int fieldWidth = 150;
-        int fieldHeight = 20;
-        int spacing = 30;
+        int centerY = this.height / 2;
 
-        this.nameField = new EditBox(this.font, centerX - fieldWidth / 2, startY, fieldWidth, fieldHeight, Component.literal("Preset Name"));
-        this.nameField.setMaxLength(32);
+        this.nameField = new EditBox(this.font, centerX - 100, centerY - 60, 200, 20, Component.literal("Name"));
+        this.nameField.setResponder(text -> validateInput());
         this.addRenderableWidget(this.nameField);
 
-        this.healthSlider = new ForgeSlider(centerX - fieldWidth / 2, startY + spacing, fieldWidth, fieldHeight, Component.literal(""), Component.literal(""), 1.0, 100.0, 20.0, 1.0, 0, true);
-        this.addRenderableWidget(this.healthSlider);
+        this.healthField = new EditBox(this.font, centerX - 100, centerY - 30, 200, 20, Component.literal("Health"));
+        this.healthField.setResponder(text -> validateInput());
+        this.addRenderableWidget(this.healthField);
 
-        this.speedSlider = new ForgeSlider(centerX - fieldWidth / 2, startY + spacing * 2, fieldWidth, fieldHeight, Component.literal(""), Component.literal(""), 0.1, 2.0, 0.5, 0.1, 1, true);
-        this.addRenderableWidget(this.speedSlider);
+        this.speedField = new EditBox(this.font, centerX - 100, centerY, 200, 20, Component.literal("Speed"));
+        this.speedField.setResponder(text -> validateInput());
+        this.addRenderableWidget(this.speedField);
 
-        this.modelField = new EditBox(this.font, centerX - fieldWidth / 2, startY + spacing * 3, fieldWidth, fieldHeight, Component.literal("Model"));
-        this.modelField.setMaxLength(32);
+        this.modelField = new EditBox(this.font, centerX - 100, centerY + 30, 200, 20, Component.literal("Model"));
+        this.modelField.setResponder(text -> validateInput());
         this.addRenderableWidget(this.modelField);
 
-        this.textureField = new EditBox(this.font, centerX - fieldWidth / 2, startY + spacing * 4, fieldWidth, fieldHeight, Component.literal("Texture"));
-        this.textureField.setMaxLength(32);
+        this.textureField = new EditBox(this.font, centerX - 100, centerY + 60, 200, 20, Component.literal("Texture"));
+        this.textureField.setResponder(text -> validateInput());
         this.addRenderableWidget(this.textureField);
 
-        this.animationField = new EditBox(this.font, centerX - fieldWidth / 2, startY + spacing * 5, fieldWidth, fieldHeight, Component.literal("Animation"));
-        this.animationField.setMaxLength(32);
+        this.animationField = new EditBox(this.font, centerX - 100, centerY + 90, 200, 20, Component.literal("Animation"));
+        this.animationField.setResponder(text -> validateInput());
         this.addRenderableWidget(this.animationField);
 
-        this.addRenderableWidget(Button.builder(Component.literal("Create"), button -> {
-            validateAndCreatePreset(true);
-        }).bounds(centerX - fieldWidth / 2, startY + spacing * 6, fieldWidth, fieldHeight).build());
+        this.addRenderableWidget(Button.builder(Component.literal("Save"), button -> {
+            NetworkHandler.sendToServer(new ValidateResourcesPacket(
+                    createMode,
+                    nameField.getValue(),
+                    parseFloat(healthField.getValue(), 20.0f),
+                    parseDouble(speedField.getValue(), 0.5),
+                    modelField.getValue(),
+                    textureField.getValue(),
+                    animationField.getValue()
+            ));
+        }).pos(centerX - 100, centerY + 120).size(98, 20).build());
 
-        this.addRenderableWidget(Button.builder(Component.literal("Back"), button -> {
-            Minecraft.getInstance().setScreen(new PresetManagerScreen());
-        }).bounds(centerX - fieldWidth / 2, startY + spacing * 7, fieldWidth, fieldHeight).build());
+        this.addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> this.minecraft.setScreen(new PresetManagerScreen()))
+                .pos(centerX + 2, centerY + 120).size(98, 20).build());
+
+        NetworkHandler.sendToServer(new ResourceListRequestPacket("model"));
+        NetworkHandler.sendToServer(new ResourceListRequestPacket("texture"));
+        NetworkHandler.sendToServer(new ResourceListRequestPacket("animation"));
     }
 
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(guiGraphics);
-        super.render(guiGraphics, mouseX, mouseY, partialTicks);
-
-        int centerX = this.width / 2;
-        int startY = this.height / 4;
-        int spacing = 30;
-        int labelOffsetX = -80;
-
-        guiGraphics.drawString(this.font, "PRESET NAME:", centerX + labelOffsetX, startY + 5, 0xFFFFFF);
-        guiGraphics.drawString(this.font, "HEALTH:", centerX + labelOffsetX, startY + spacing + 5, 0xFFFFFF);
-        guiGraphics.drawString(this.font, "SPEED:", centerX + labelOffsetX, startY + spacing * 2 + 5, 0xFFFFFF);
-        guiGraphics.drawString(this.font, "MODEL:", centerX + labelOffsetX, startY + spacing * 3 + 5, 0xFFFFFF);
-        guiGraphics.drawString(this.font, "TEXTURE:", centerX + labelOffsetX, startY + spacing * 4 + 5, 0xFFFFFF);
-        guiGraphics.drawString(this.font, "ANIMATION:", centerX + labelOffsetX, startY + spacing * 5 + 5, 0xFFFFFF);
+    private void validateInput() {
+        boolean valid = !nameField.getValue().isEmpty() &&
+                isValidFloat(healthField.getValue()) &&
+                isValidDouble(speedField.getValue()) &&
+                !modelField.getValue().isEmpty() &&
+                !textureField.getValue().isEmpty() &&
+                !animationField.getValue().isEmpty();
+        this.children().stream()
+                .filter(widget -> widget instanceof Button && ((Button) widget).getMessage().getString().equals("Save"))
+                .map(widget -> (Button) widget)
+                .findFirst()
+                .ifPresent(button -> button.active = valid);
     }
 
-    private void validateAndCreatePreset(boolean isCreateMode) {
-        String name = this.nameField.getValue();
-        float health = (float) this.healthSlider.getValue();
-        double speed = this.speedSlider.getValue();
-        String model = this.modelField.getValue();
-        String texture = this.textureField.getValue();
-        String animation = this.animationField.getValue();
-
-        NetworkHandler.sendToServer(new ValidateResourcesPacket(model, texture, animation, isCreateMode, name, health, speed));
+    private boolean isValidFloat(String value) {
+        try {
+            Float.parseFloat(value);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
-    public void handleResourceValidation(boolean valid, boolean isCreateMode, String name, float health, double speed, String model, String texture, String animation) {
+    private boolean isValidDouble(String value) {
+        try {
+            Double.parseDouble(value);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private float parseFloat(String value, float defaultValue) {
+        try {
+            return Float.parseFloat(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    private double parseDouble(String value, double defaultValue) {
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    public void handleResourceList(String type, List<String> resources) {
+        switch (type) {
+            case "model" -> models = resources;
+            case "texture" -> textures = resources;
+            case "animation" -> animations = resources;
+        }
+    }
+
+    public void handleResourceValidation(boolean valid, boolean createMode, String name, float health, double speed, String model, String texture, String animation) {
         if (valid) {
-            if (isCreateMode) {
+            if (createMode) {
                 NetworkHandler.sendToServer(new PresetCreatePacket(name, health, speed, model, texture, animation));
             } else {
                 NetworkHandler.sendToServer(new PresetEditPacket(name, health, speed, model, texture, animation));
             }
-            Minecraft.getInstance().setScreen(new PresetManagerScreen());
+            this.minecraft.setScreen(new PresetManagerScreen());
         } else {
-            LOGGER.warn("Resource validation failed for model: {}, texture: {}, animation: {}", model, texture, animation);
-            Minecraft.getInstance().player.displayClientMessage(
-                    Component.literal(String.format("Invalid resources! Model: %s, Texture: %s, Animation: %s not found.", model, texture, animation)),
-                    false
-            );
+            this.minecraft.setScreen(new ErrorScreen(Component.literal("Error"), Component.literal("Invalid resources. Please check the model, texture, and animation files.")));
         }
+    }
+
+    @Override
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(poseStack);
+        drawCenteredString(poseStack, this.font, this.title, this.width / 2, 20, 0xFFFFFF);
+        drawString(poseStack, this.font, "Name:", this.width / 2 - 150, this.height / 2 - 55, 0xFFFFFF);
+        drawString(poseStack, this.font, "Health:", this.width / 2 - 150, this.height / 2 - 25, 0xFFFFFF);
+        drawString(poseStack, this.font, "Speed:", this.width / 2 - 150, this.height / 2 + 5, 0xFFFFFF);
+        drawString(poseStack, this.font, "Model:", this.width / 2 - 150, this.height / 2 + 35, 0xFFFFFF);
+        drawString(poseStack, this.font, "Texture:", this.width / 2 - 150, this.height / 2 + 65, 0xFFFFFF);
+        drawString(poseStack, this.font, "Animation:", this.width / 2 - 150, this.height / 2 + 95, 0xFFFFFF);
+        super.render(poseStack, mouseX, mouseY, partialTicks);
     }
 }

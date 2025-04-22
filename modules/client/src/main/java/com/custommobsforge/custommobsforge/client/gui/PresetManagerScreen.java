@@ -1,29 +1,20 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
-import com.custommobsforge.custommobsforge.common.network.NetworkHandler;
-import com.custommobsforge.custommobsforge.common.network.PresetCreatePacket;
-import com.custommobsforge.custommobsforge.common.network.PresetDeletePacket;
-import com.custommobsforge.custommobsforge.common.network.PresetEditPacket;
-import com.custommobsforge.custommobsforge.common.network.ResourceListRequestPacket;
-import com.custommobsforge.custommobsforge.common.network.ValidateResourcesPacket;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import com.custommobsforge.custommobsforge.common.network.*;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.client.gui.widget.ForgeSlider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class PresetManagerScreen extends Screen {
-    private static final Logger LOGGER = LogManager.getLogger();
-    public EditBox nameField; // Сделали public
-    public ForgeSlider healthSlider; // Сделали public
-    public ForgeSlider speedSlider; // Сделали public
-    public EditBox modelField; // Сделали public
-    public EditBox textureField; // Сделали public
-    public EditBox animationField; // Сделали public
+    private PresetListWidget presetList;
+    private String selectedPreset;
+    private List<String> models = new ArrayList<>();
+    private List<String> textures = new ArrayList<>();
+    private List<String> animations = new ArrayList<>();
 
     public PresetManagerScreen() {
         super(Component.literal("Preset Manager"));
@@ -31,109 +22,72 @@ public class PresetManagerScreen extends Screen {
 
     @Override
     protected void init() {
-        super.init();
-        int centerX = this.width / 2;
-        int startY = this.height / 4;
-        int fieldWidth = 150;
-        int fieldHeight = 20;
-        int spacing = 30;
-        int labelOffsetX = -80;
-        int labelWidth = 70;
+        this.presetList = new PresetListWidget(this, this.minecraft, this.width / 2, this.height, 50, this.height - 50, 30);
+        this.addWidget(this.presetList);
 
-        this.nameField = new EditBox(this.font, centerX - fieldWidth / 2, startY, fieldWidth, fieldHeight, Component.literal("Preset Name"));
-        this.nameField.setMaxLength(32);
-        this.addRenderableWidget(this.nameField);
+        int buttonY = this.height - 40;
+        this.addRenderableWidget(Button.builder(Component.literal("Create New"), button -> this.minecraft.setScreen(new PresetEditorScreen(true)))
+                .pos(10, buttonY).size(100, 20).build());
 
-        this.healthSlider = new ForgeSlider(centerX - fieldWidth / 2, startY + spacing, fieldWidth, fieldHeight, Component.literal(""), Component.literal(""), 1.0, 100.0, 20.0, 1.0, 0, true);
-        this.addRenderableWidget(this.healthSlider);
+        this.addRenderableWidget(Button.builder(Component.literal("Spawn Mob"), button -> {
+            if (selectedPreset != null) {
+                NetworkHandler.sendToServer(new SpawnMobPacket(selectedPreset));
+                this.minecraft.setScreen(null);
+            }
+        }).pos(this.width - 110, buttonY).size(100, 20).build());
 
-        this.speedSlider = new ForgeSlider(centerX - fieldWidth / 2, startY + spacing * 2, fieldWidth, fieldHeight, Component.literal(""), Component.literal(""), 0.1, 2.0, 0.5, 0.1, 1, true);
-        this.addRenderableWidget(this.speedSlider);
-
-        this.modelField = new EditBox(this.font, centerX - fieldWidth / 2, startY + spacing * 3, fieldWidth, fieldHeight, Component.literal("Model"));
-        this.modelField.setMaxLength(32);
-        this.addRenderableWidget(this.modelField);
-
-        this.textureField = new EditBox(this.font, centerX - fieldWidth / 2, startY + spacing * 4, fieldWidth, fieldHeight, Component.literal("Texture"));
-        this.textureField.setMaxLength(32);
-        this.addRenderableWidget(this.textureField);
-
-        this.animationField = new EditBox(this.font, centerX - fieldWidth / 2, startY + spacing * 5, fieldWidth, fieldHeight, Component.literal("Animation"));
-        this.animationField.setMaxLength(32);
-        this.addRenderableWidget(this.animationField);
-
-        this.addRenderableWidget(Button.builder(Component.literal("+"), button -> {
-            NetworkHandler.sendToServer(new ResourceListRequestPacket("model"));
-            NetworkHandler.sendToServer(new ResourceListRequestPacket("texture"));
-            NetworkHandler.sendToServer(new ResourceListRequestPacket("animation"));
-        }).bounds(centerX + fieldWidth / 2 + 10, startY + spacing * 5, 20, 20).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("Create Preset"), button -> {
-            validateAndCreatePreset(true);
-        }).bounds(centerX - fieldWidth / 2, startY + spacing * 6, fieldWidth, fieldHeight).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("Edit Preset"), button -> {
-            validateAndCreatePreset(false);
-        }).bounds(centerX - fieldWidth / 2, startY + spacing * 7, fieldWidth, fieldHeight).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("Delete Preset"), button -> {
-            NetworkHandler.sendToServer(new PresetDeletePacket(this.nameField.getValue()));
-            this.nameField.setValue("");
-        }).bounds(centerX - fieldWidth / 2, startY + spacing * 8, fieldWidth, fieldHeight).build());
-
-        this.addRenderableWidget(Button.builder(Component.literal("Back"), button -> {
-            Minecraft.getInstance().setScreen(new MainMenuScreen());
-        }).bounds(centerX - fieldWidth / 2, startY + spacing * 9, fieldWidth, fieldHeight).build());
+        NetworkHandler.sendToServer(new RequestPresetsPacket());
+        NetworkHandler.sendToServer(new ResourceListRequestPacket("model"));
+        NetworkHandler.sendToServer(new ResourceListRequestPacket("texture"));
+        NetworkHandler.sendToServer(new ResourceListRequestPacket("animation"));
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(guiGraphics);
-        super.render(guiGraphics, mouseX, mouseY, partialTicks);
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(poseStack);
+        this.presetList.render(poseStack, mouseX, mouseY, partialTicks);
+        drawCenteredString(poseStack, this.font, this.title, this.width / 2, 20, 0xFFFFFF);
+        super.render(poseStack, mouseX, mouseY, partialTicks);
 
-        int centerX = this.width / 2;
-        int startY = this.height / 4;
-        int spacing = 30;
-        int labelOffsetX = -80;
-
-        guiGraphics.drawString(this.font, "PRESET NAME:", centerX + labelOffsetX, startY + 5, 0xFFFFFF);
-        guiGraphics.drawString(this.font, "HEALTH:", centerX + labelOffsetX, startY + spacing + 5, 0xFFFFFF);
-        guiGraphics.drawString(this.font, "SPEED:", centerX + labelOffsetX, startY + spacing * 2 + 5, 0xFFFFFF);
-        guiGraphics.drawString(this.font, "MODEL:", centerX + labelOffsetX, startY + spacing * 3 + 5, 0xFFFFFF);
-        guiGraphics.drawString(this.font, "TEXTURE:", centerX + labelOffsetX, startY + spacing * 4 + 5, 0xFFFFFF);
-        guiGraphics.drawString(this.font, "ANIMATION:", centerX + labelOffsetX, startY + spacing * 5 + 5, 0xFFFFFF);
+        if (this.presetList.getSelected() != null) {
+            int buttonX = this.width / 2 + 10;
+            int buttonY = this.presetList.getTop() + (this.presetList.getBottom() - this.presetList.getTop() - 20) / 2;
+            this.presetList.getSelected().addButtons(buttonX, buttonY);
+        }
     }
 
-    private void validateAndCreatePreset(boolean isCreateMode) {
-        String name = this.nameField.getValue();
-        float health = (float) this.healthSlider.getValue();
-        double speed = this.speedSlider.getValue();
-        String model = this.modelField.getValue();
-        String texture = this.textureField.getValue();
-        String animation = this.animationField.getValue();
-
-        NetworkHandler.sendToServer(new ValidateResourcesPacket(model, texture, animation, isCreateMode, name, health, speed));
+    public void setSelectedPreset(String presetName) {
+        this.selectedPreset = presetName;
+        this.presetList.getChildren().forEach(entry -> {
+            if (entry instanceof PresetListWidget.Entry presetEntry && presetEntry.presetName.equals(presetName)) {
+                this.presetList.setSelected(presetEntry);
+            }
+        });
     }
 
-    public void handleResourceValidation(boolean valid, boolean isCreateMode, String name, float health, double speed, String model, String texture, String animation) {
+    public void handleResourceList(String type, List<String> resources) {
+        switch (type) {
+            case "model" -> models = resources;
+            case "texture" -> textures = resources;
+            case "animation" -> animations = resources;
+        }
+    }
+
+    public void handleResourceValidation(boolean valid, boolean createMode, String name, float health, double speed, String model, String texture, String animation) {
         if (valid) {
-            if (isCreateMode) {
+            if (createMode) {
                 NetworkHandler.sendToServer(new PresetCreatePacket(name, health, speed, model, texture, animation));
             } else {
                 NetworkHandler.sendToServer(new PresetEditPacket(name, health, speed, model, texture, animation));
             }
-            this.nameField.setValue("");
-            this.healthSlider.setValue(20.0);
-            this.speedSlider.setValue(0.5);
-            this.modelField.setValue("");
-            this.textureField.setValue("");
-            this.animationField.setValue("");
+            this.presetList.refreshEntries();
         } else {
-            LOGGER.warn("Resource validation failed for model: {}, texture: {}, animation: {}", model, texture, animation);
-            Minecraft.getInstance().player.displayClientMessage(
-                    Component.literal(String.format("Invalid resources! Model: %s, Texture: %s, Animation: %s not found.", model, texture, animation)),
-                    false
-            );
+            this.minecraft.setScreen(new ErrorScreen(Component.literal("Error"), Component.literal("Invalid resources. Please check the model, texture, and animation files.")));
         }
+    }
+
+    @Override
+    public void onClose() {
+        this.minecraft.setScreen(null);
     }
 }
