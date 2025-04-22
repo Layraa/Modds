@@ -2,7 +2,7 @@ package com.custommobsforge.custommobsforge.common.entity;
 
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -15,19 +15,19 @@ import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class CustomMob extends Mob implements GeoEntity {
+public class CustomMob extends PathfinderMob implements GeoEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-    private String presetName;
     private String modelName;
     private String textureName;
     private String animationName;
-    private float sizeWidth = 0.6F; // Значения по умолчанию
+    private float sizeWidth = 0.6F;
     private float sizeHeight = 1.95F;
 
-    public CustomMob(EntityType<? extends Mob> entityType, Level level) {
+    public CustomMob(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         this.refreshDimensions();
     }
@@ -40,16 +40,12 @@ public class CustomMob extends Mob implements GeoEntity {
         this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
     }
 
-    public void setPresetName(String presetName) {
-        this.presetName = presetName;
-    }
-
     public void setModelName(String modelName) {
         this.modelName = modelName;
     }
 
     public String getModelName() {
-        return modelName;
+        return modelName != null ? modelName : "test_model";
     }
 
     public void setTextureName(String textureName) {
@@ -57,7 +53,7 @@ public class CustomMob extends Mob implements GeoEntity {
     }
 
     public String getTextureName() {
-        return textureName;
+        return textureName != null ? textureName : "test_texture";
     }
 
     public void setAnimationName(String animationName) {
@@ -65,16 +61,20 @@ public class CustomMob extends Mob implements GeoEntity {
     }
 
     public String getAnimationName() {
-        return animationName;
+        return animationName != null ? animationName : "test_animation";
     }
 
     public void setHealthValue(float health) {
-        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
-        this.setHealth(health);
+        if (this.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
+            this.setHealth(health);
+        }
     }
 
     public void setSpeedValue(double speed) {
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(speed);
+        if (this.getAttributes().hasAttribute(Attributes.MOVEMENT_SPEED)) {
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(speed);
+        }
     }
 
     public void setSize(float width, float height) {
@@ -90,10 +90,12 @@ public class CustomMob extends Mob implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, "controller", 0, state -> {
-            state.getController().setAnimation(RawAnimation.begin().thenPlay("animation." + (animationName != null ? animationName : "test_model") + ".walk"));
-            return state.setAndContinue(state.getController().getAnimationState());
-        }));
+        controllers.add(new AnimationController<>(this, "controller", 0, this::animationPredicate));
+    }
+
+    private <E extends GeoEntity> AnimationState<E> animationPredicate(AnimationState<E> state) {
+        state.getController().setAnimation(RawAnimation.begin().thenPlay("animation." + getAnimationName() + ".walk"));
+        return state;
     }
 
     @Override

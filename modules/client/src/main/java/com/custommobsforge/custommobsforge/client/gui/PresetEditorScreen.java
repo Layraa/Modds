@@ -61,25 +61,18 @@ public class PresetEditorScreen extends Screen {
 
         this.modelField = new EditBox(this.font, centerX - 100, startY + 150, 200, 20, Component.literal("Model"));
         this.modelField.setValue(createMode ? "" : PresetManagerScreen.getSelectedPreset().modelName());
+        this.modelField.setResponder(this::updateModelSuggestion);
         this.addWidget(this.modelField);
 
         this.textureField = new EditBox(this.font, centerX - 100, startY + 180, 200, 20, Component.literal("Texture"));
         this.textureField.setValue(createMode ? "" : PresetManagerScreen.getSelectedPreset().textureName());
+        this.textureField.setResponder(this::updateTextureSuggestion);
         this.addWidget(this.textureField);
 
         this.animationField = new EditBox(this.font, centerX - 100, startY + 210, 200, 20, Component.literal("Animation"));
         this.animationField.setValue(createMode ? "" : PresetManagerScreen.getSelectedPreset().animationName());
+        this.animationField.setResponder(this::updateAnimationSuggestion);
         this.addWidget(this.animationField);
-
-        this.modelField.setSuggestionProvider((field, text) -> modelOptions.stream()
-                .filter(option -> option.toLowerCase().contains(text.toLowerCase()))
-                .collect(Collectors.toList()));
-        this.textureField.setSuggestionProvider((field, text) -> textureOptions.stream()
-                .filter(option -> option.toLowerCase().contains(text.toLowerCase()))
-                .collect(Collectors.toList()));
-        this.animationField.setSuggestionProvider((field, text) -> animationOptions.stream()
-                .filter(option -> option.toLowerCase().contains(text.toLowerCase()))
-                .collect(Collectors.toList()));
 
         this.addRenderableWidget(Button.builder(Component.literal("Save"), button -> {
             try {
@@ -106,6 +99,39 @@ public class PresetEditorScreen extends Screen {
         ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("model"));
         ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("texture"));
         ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("animation"));
+    }
+
+    private void updateModelSuggestion(String input) {
+        List<String> suggestions = modelOptions.stream()
+                .filter(option -> option.toLowerCase().contains(input.toLowerCase()))
+                .collect(Collectors.toList());
+        if (!suggestions.isEmpty()) {
+            this.modelField.setSuggestion(suggestions.get(0));
+        } else {
+            this.modelField.setSuggestion("");
+        }
+    }
+
+    private void updateTextureSuggestion(String input) {
+        List<String> suggestions = textureOptions.stream()
+                .filter(option -> option.toLowerCase().contains(input.toLowerCase()))
+                .collect(Collectors.toList());
+        if (!suggestions.isEmpty()) {
+            this.textureField.setSuggestion(suggestions.get(0));
+        } else {
+            this.textureField.setSuggestion("");
+        }
+    }
+
+    private void updateAnimationSuggestion(String input) {
+        List<String> suggestions = animationOptions.stream()
+                .filter(option -> option.toLowerCase().contains(input.toLowerCase()))
+                .collect(Collectors.toList());
+        if (!suggestions.isEmpty()) {
+            this.animationField.setSuggestion(suggestions.get(0));
+        } else {
+            this.animationField.setSuggestion("");
+        }
     }
 
     @Override

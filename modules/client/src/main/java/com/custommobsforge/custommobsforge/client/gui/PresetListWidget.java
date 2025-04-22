@@ -1,47 +1,56 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
 import com.custommobsforge.custommobsforge.common.Preset;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.network.chat.Component;
 
-public class PresetListWidget extends ObjectSelectionList<PresetListWidget.Entry> {
-    private final PresetManagerScreen screen;
+import javax.annotation.ParametersAreNonnullByDefault;
 
-    public PresetListWidget(PresetManagerScreen screen, Minecraft minecraft, int width, int height, int top, int bottom) {
-        super(minecraft, width, height, top, bottom, 30);
-        this.screen = screen;
-        refreshEntries();
+@ParametersAreNonnullByDefault
+public class PresetListWidget extends ObjectSelectionList<PresetListWidget.Entry> {
+    private final PresetManagerScreen parent;
+
+    public PresetListWidget(PresetManagerScreen parent, net.minecraft.client.Minecraft minecraft, int width, int height, int top, int bottom) {
+        super(minecraft, width, height, top, bottom, 20);
+        this.parent = parent;
+        this.refreshEntries();
     }
 
     public void refreshEntries() {
         this.clearEntries();
-        for (Preset preset : screen.getPresets()) {
-            this.addEntry(new Entry(preset.getName()));
+        for (Preset preset : parent.getPresets()) {
+            this.addEntry(new Entry(preset));
         }
     }
 
+    @Override
+    protected int getScrollbarPosition() {
+        return this.width - 6;
+    }
+
+    @Override
+    public int getRowWidth() {
+        return this.width - 10;
+    }
+
     public class Entry extends ObjectSelectionList.Entry<Entry> {
-        private final String presetName;
+        private final Preset preset;
 
-        public Entry(String presetName) {
-            this.presetName = presetName;
-        }
-
-        public String getPresetName() {
-            return presetName;
+        public Entry(Preset preset) {
+            this.preset = preset;
         }
 
         @Override
         public void render(GuiGraphics guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTicks) {
-            guiGraphics.drawString(Minecraft.getInstance().font, presetName, left + 5, top + 5, 0xFFFFFF);
+            guiGraphics.drawString(minecraft.font, preset.name(), left + 5, top + 5, 0xFFFFFF);
         }
 
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
             if (button == 0) {
-                screen.setSelectedPreset(presetName);
+                PresetListWidget.this.setSelected(this);
+                parent.setSelectedPreset(preset.name());
                 return true;
             }
             return false;
@@ -49,7 +58,11 @@ public class PresetListWidget extends ObjectSelectionList<PresetListWidget.Entry
 
         @Override
         public Component getNarration() {
-            return Component.literal(presetName);
+            return Component.literal(preset.name());
+        }
+
+        public String getPresetName() {
+            return preset.name();
         }
     }
 }

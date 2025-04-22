@@ -1,123 +1,115 @@
 package com.custommobsforge.custommobsforge.client;
 
-import com.custommobsforge.custommobsforge.client.gui.MainMenuScreen;
 import com.custommobsforge.custommobsforge.client.gui.PresetEditorScreen;
 import com.custommobsforge.custommobsforge.client.gui.PresetManagerScreen;
 import com.custommobsforge.custommobsforge.client.render.CustomMobRenderer;
 import com.custommobsforge.custommobsforge.common.ModEntities;
+import com.custommobsforge.custommobsforge.common.Preset;
 import com.custommobsforge.custommobsforge.common.PresetManager;
-import com.custommobsforge.custommobsforge.common.network.NetworkHandler;
-import com.custommobsforge.custommobsforge.common.event.OpenGuiEvent;
-import com.custommobsforge.custommobsforge.common.network.PresetSyncEvent;
-import com.custommobsforge.custommobsforge.common.network.ResourceListResponseEvent;
-import com.custommobsforge.custommobsforge.common.network.ResourceValidationResponseEvent;
+import com.custommobsforge.custommobsforge.common.network.*;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.minecraftforge.network.NetworkEvent;
 
-@Mod(value = ClientCustomMobsForge.MOD_ID)
+@Mod.EventBusSubscriber(modid = "custommobsforge", value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ClientCustomMobsForge {
-    public static final String MOD_ID = "custommobsforge_client";
-    private static final Logger LOGGER = LogManager.getLogger();
 
-    public ClientCustomMobsForge() {
-        LOGGER.info("ClientCustomMobsForge: Initializing");
-
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        modEventBus.addListener(this::clientSetup);
-
-        IEventBus forgeBus = net.minecraftforge.common.MinecraftForge.EVENT_BUS;
-        forgeBus.register(this);
-    }
-
-    private void clientSetup(final FMLClientSetupEvent event) {
-        LOGGER.info("ClientCustomMobsForge: Client setup");
-        NetworkHandler.register();
-
-        event.enqueueWork(() -> {
-            IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-            modEventBus.addListener(this::registerRenderers);
-        });
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        ClientNetworkHandler.register();
     }
 
     @SubscribeEvent
-    public void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        LOGGER.info("ClientCustomMobsForge: Registering entity renderers");
+    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.CUSTOM_MOB.get(), CustomMobRenderer::new);
     }
 
-    @SubscribeEvent
-    public void onPresetSync(PresetSyncEvent event) {
-        if (!Minecraft.getInstance().level.isClientSide()) return;
-        var packet = event.getPacket();
-        LOGGER.info("ClientCustomMobsForge: Received PresetSyncEvent for preset: {}", packet.getName());
-        PresetManager.getInstance().addPreset(
-                packet.getName(),
-                packet.getHealth(),
-                packet.getSpeed(),
-                packet.getModelName(),
-                packet.getTextureName(),
-                packet.getAnimationName()
-        );
-    }
-
-    @SubscribeEvent
-    public void onOpenGui(OpenGuiEvent event) {
-        if (!Minecraft.getInstance().level.isClientSide()) return;
-        Minecraft.getInstance().execute(() -> {
-            LOGGER.info("Received OpenGuiEvent, opening MainMenuScreen");
-            Minecraft.getInstance().setScreen(new MainMenuScreen());
+    public static void onOpenGui(OpenGuiPacket packet, NetworkEvent.Context context) {
+        context.enqueueWork(() -> {
+            Minecraft.getInstance().setScreen(new PresetManagerScreen());
         });
+        context.setPacketHandled(true);
     }
 
-    @SubscribeEvent
-    public void onResourceListResponse(ResourceListResponseEvent event) {
-        if (!Minecraft.getInstance().level.isClientSide()) return;
-        var packet = event.getPacket();
-        Minecraft.getInstance().execute(() -> {
-            Screen screen = Minecraft.getInstance().screen;
-            if (screen instanceof PresetEditorScreen || screen instanceof PresetManagerScreen) {
-                // Убрали setSuggestions, так как он не поддерживается
+    public static void onPresetSync(PresetSyncPacket packet, NetworkEvent.Context context) {
+        context.enqueueWork(() -> {
+            PresetManager.getInstance().addPreset(
+                    packet.getName(),
+                    packet.getHealth(),
+                    packet.getSpeed(),
+                    packet.getSizeWidth(),
+                    packet.getSizeHeight(),
+                    packet.getModelName(),
+                    packet.getTextureName(),
+                    packet.getAnimationName()
+            );
+        });
+        context.setPacketHandled(true);
+    }
+
+    public static void onPresetDeleteSync(PresetDeleteSyncPacket packet, NetworkEvent.Context context) {
+        context.enqueueWork(() -> {
+            PresetManager.getInstance().removePreset(packet.getName());
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.screen instanceof PresetManagerScreen screen) {
+                screen.setSelectedPreset(null);
+                screen.getPresetList().refreshEntries();
             }
         });
+        context.setPacketHandled(true);
     }
 
-    @SubscribeEvent
-    public void onResourceValidationResponse(ResourceValidationResponseEvent event) {
-        if (!Minecraft.getInstance().level.isClientSide()) return;
-        var packet = event.getPacket();
-        Minecraft.getInstance().execute(() -> {
-            Screen screen = Minecraft.getInstance().screen;
-            if (screen instanceof PresetEditorScreen editorScreen) {
-                editorScreen.handleResourceValidation(
+    public static void onResourceListResponse(ResourceListResponsePacket packet, NetworkEvent.Context context) {
+        context.enqueueWork(() -> {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.screen instanceof PresetEditorScreen editorScreen) {
+                editorScreen.handleResourceList(packet.getType(), packet.getResources());
+            } else if (minecraft.screen instanceof PresetManagerScreen managerScreen) {
+                managerScreen.handleResourceList(packet.getType(), packet.getResources());
+            }
+        });
+        context.setPacketHandled(true);
+    }
+
+    public static void onResourceValidationResponse(ResourceValidationResponsePacket packet, NetworkEvent.Context context) {
+        context.enqueueWork(() -> {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft.screen instanceof PresetEditorScreen screen) {
+                screen.handleResourceValidation(
                         packet.isValid(),
                         packet.isCreateMode(),
                         packet.getName(),
                         packet.getHealth(),
                         packet.getSpeed(),
+                        packet.getSizeWidth(),
+                        packet.getSizeHeight(),
                         packet.getModel(),
                         packet.getTexture(),
                         packet.getAnimation()
                 );
-            } else if (screen instanceof PresetManagerScreen managerScreen) {
-                managerScreen.handleResourceValidation(
+            } else if (minecraft.screen instanceof PresetManagerScreen screen) {
+                screen.handleResourceValidation(
                         packet.isValid(),
                         packet.isCreateMode(),
                         packet.getName(),
                         packet.getHealth(),
                         packet.getSpeed(),
+                        packet.getSizeWidth(),
+                        packet.getSizeHeight(),
                         packet.getModel(),
                         packet.getTexture(),
                         packet.getAnimation()
                 );
             }
         });
+        context.setPacketHandled(true);
+    }
+
+    public static boolean isClientSide() {
+        return Minecraft.getInstance().isLocalServer() || Minecraft.getInstance().getSingleplayerServer() != null;
     }
 }
