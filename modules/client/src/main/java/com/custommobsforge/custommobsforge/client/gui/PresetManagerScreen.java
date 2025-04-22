@@ -18,12 +18,12 @@ import org.apache.logging.log4j.Logger;
 
 public class PresetManagerScreen extends Screen {
     private static final Logger LOGGER = LogManager.getLogger();
-    protected EditBox nameField;
-    protected ForgeSlider healthSlider;
-    protected ForgeSlider speedSlider;
-    protected EditBox modelField;
-    protected EditBox textureField;
-    protected EditBox animationField;
+    public EditBox nameField; // Сделали public
+    public ForgeSlider healthSlider; // Сделали public
+    public ForgeSlider speedSlider; // Сделали public
+    public EditBox modelField; // Сделали public
+    public EditBox textureField; // Сделали public
+    public EditBox animationField; // Сделали public
 
     public PresetManagerScreen() {
         super(Component.literal("Preset Manager"));
@@ -62,7 +62,6 @@ public class PresetManagerScreen extends Screen {
         this.animationField.setMaxLength(32);
         this.addRenderableWidget(this.animationField);
 
-        // Используем Button.Builder для создания кнопок
         this.addRenderableWidget(Button.builder(Component.literal("+"), button -> {
             NetworkHandler.sendToServer(new ResourceListRequestPacket("model"));
             NetworkHandler.sendToServer(new ResourceListRequestPacket("texture"));
@@ -97,7 +96,6 @@ public class PresetManagerScreen extends Screen {
         int spacing = 30;
         int labelOffsetX = -80;
 
-        // Используем GuiGraphics для рисования текста
         guiGraphics.drawString(this.font, "PRESET NAME:", centerX + labelOffsetX, startY + 5, 0xFFFFFF);
         guiGraphics.drawString(this.font, "HEALTH:", centerX + labelOffsetX, startY + spacing + 5, 0xFFFFFF);
         guiGraphics.drawString(this.font, "SPEED:", centerX + labelOffsetX, startY + spacing * 2 + 5, 0xFFFFFF);

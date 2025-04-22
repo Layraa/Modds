@@ -13,7 +13,7 @@ import net.minecraft.network.chat.Component;
 public class MainMenuScreen extends Screen {
     private EditBox presetNameField;
 
-    protected MainMenuScreen() {
+    public MainMenuScreen() { // Изменили с protected на public
         super(Component.literal("Custom Mobs Forge Menu"));
     }
 

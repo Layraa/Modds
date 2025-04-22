@@ -3,7 +3,7 @@ package com.custommobsforge.custommobsforge.client;
 import com.custommobsforge.custommobsforge.client.gui.MainMenuScreen;
 import com.custommobsforge.custommobsforge.client.gui.PresetEditorScreen;
 import com.custommobsforge.custommobsforge.client.gui.PresetManagerScreen;
-import com.custommobsforge.custommobsforge.client.render.CustomMobRendererAdapter;
+import com.custommobsforge.custommobsforge.client.render.CustomMobRenderer;
 import com.custommobsforge.custommobsforge.common.ModEntities;
 import com.custommobsforge.custommobsforge.common.PresetManager;
 import com.custommobsforge.custommobsforge.common.network.NetworkHandler;
@@ -11,12 +11,9 @@ import com.custommobsforge.custommobsforge.common.event.OpenGuiEvent;
 import com.custommobsforge.custommobsforge.common.network.PresetSyncEvent;
 import com.custommobsforge.custommobsforge.common.network.ResourceListResponseEvent;
 import com.custommobsforge.custommobsforge.common.network.ResourceValidationResponseEvent;
-import com.custommobsforge.custommobsforge.common.network.ServerCheckPacket;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -53,28 +50,7 @@ public class ClientCustomMobsForge {
     @SubscribeEvent
     public void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         LOGGER.info("ClientCustomMobsForge: Registering entity renderers");
-        event.registerEntityRenderer(ModEntities.CUSTOM_MOB.get(), CustomMobRendererAdapter::new);
-    }
-
-    @SubscribeEvent
-    public void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
-        LOGGER.info("ClientCustomMobsForge: Player logged in");
-        PresetManager.getInstance().clearPresets();
-        if (event.getEntity().level().isClientSide()) {
-            if (event.getEntity().getServer() != null && !event.getEntity().getServer().isDedicatedServer()) {
-                LOGGER.info("Singleplayer mode detected, no need for ServerCheckPacket");
-            } else {
-                LOGGER.info("Not in singleplayer mode, sending ServerCheckPacket");
-                NetworkHandler.sendToServer(new ServerCheckPacket());
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (!event.getEntity().level().isClientSide()) return;
-        LOGGER.info("ClientCustomMobsForge: Player logged out");
-        PresetManager.getInstance().clearPresets();
+        event.registerEntityRenderer(ModEntities.CUSTOM_MOB.get(), CustomMobRenderer::new);
     }
 
     @SubscribeEvent
@@ -107,30 +83,9 @@ public class ClientCustomMobsForge {
         var packet = event.getPacket();
         Minecraft.getInstance().execute(() -> {
             Screen screen = Minecraft.getInstance().screen;
-            if (screen instanceof PresetEditorScreen editorScreen) {
-                switch (packet.getResourceType()) {
-                    case "model":
-                        editorScreen.modelField.setSuggestions(packet.getResources());
-                        break;
-                    case "texture":
-                        editorScreen.textureField.setSuggestions(packet.getResources());
-                        break;
-                    case "animation":
-                        editorScreen.animationField.setSuggestions(packet.getResources());
-                        break;
-                }
-            } else if (screen instanceof PresetManagerScreen managerScreen) {
-                switch (packet.getResourceType()) {
-                    case "model":
-                        managerScreen.modelField.setSuggestions(packet.getResources());
-                        break;
-                    case "texture":
-                        managerScreen.textureField.setSuggestions(packet.getResources());
-                        break;
-                    case "animation":
-                        managerScreen.animationField.setSuggestions(packet.getResources());
-                        break;
-                }
+            if (screen instanceof PresetEditorScreen || screen instanceof PresetManagerScreen) {
+                // Убрали вызов setSuggestions, так как он не поддерживается
+                // Если нужно автодополнение, можно добавить позже
             }
         });
     }

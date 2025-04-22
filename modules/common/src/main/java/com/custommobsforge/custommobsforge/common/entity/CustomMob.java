@@ -6,20 +6,20 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.core.animatable.GeoAnimatable;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class CustomMob extends Mob implements GeoEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    private String presetName;
     private String modelName;
     private String textureName;
     private String animationName;
     private float health;
     private double speed;
 
-    protected CustomMob(EntityType<? extends Mob> entityType, Level level) {
+    public CustomMob(EntityType<? extends Mob> entityType, Level level) {
         super(entityType, level);
     }
 
@@ -29,9 +29,16 @@ public class CustomMob extends Mob implements GeoEntity {
                 .add(Attributes.MOVEMENT_SPEED, 0.5);
     }
 
-    // Методы для получения имени модели, текстуры и анимации
+    public String getPresetName() {
+        return presetName != null ? presetName : "default";
+    }
+
+    public void setPresetName(String presetName) {
+        this.presetName = presetName;
+    }
+
     public String getModelName() {
-        return modelName != null ? modelName : "zombie"; // Значение по умолчанию, если не задано
+        return modelName != null ? modelName : "zombie";
     }
 
     public void setModelName(String modelName) {
@@ -39,7 +46,7 @@ public class CustomMob extends Mob implements GeoEntity {
     }
 
     public String getTextureName() {
-        return textureName != null ? textureName : "zombie"; // Значение по умолчанию
+        return textureName != null ? textureName : "zombie";
     }
 
     public void setTextureName(String textureName) {
@@ -47,7 +54,7 @@ public class CustomMob extends Mob implements GeoEntity {
     }
 
     public String getAnimationName() {
-        return animationName != null ? animationName : "zombie"; // Значение по умолчанию
+        return animationName != null ? animationName : "zombie";
     }
 
     public void setAnimationName(String animationName) {
@@ -60,7 +67,12 @@ public class CustomMob extends Mob implements GeoEntity {
 
     public void setHealthValue(float health) {
         this.health = health;
-        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
+        var healthAttribute = this.getAttribute(Attributes.MAX_HEALTH);
+        if (healthAttribute != null) {
+            healthAttribute.setBaseValue(health);
+        } else {
+            LOGGER.warn("MAX_HEALTH attribute not found for CustomMob");
+        }
         this.setHealth(health);
     }
 
@@ -70,10 +82,14 @@ public class CustomMob extends Mob implements GeoEntity {
 
     public void setSpeedValue(double speed) {
         this.speed = speed;
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(speed);
+        var speedAttribute = this.getAttribute(Attributes.MOVEMENT_SPEED);
+        if (speedAttribute != null) {
+            speedAttribute.setBaseValue(speed);
+        } else {
+            LOGGER.warn("MOVEMENT_SPEED attribute not found for CustomMob");
+        }
     }
 
-    // Реализация GeoEntity
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return cache;
@@ -82,12 +98,10 @@ public class CustomMob extends Mob implements GeoEntity {
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         // Здесь можно добавить контроллеры анимаций, если нужно
-        // Например:
-        // controllers.add(new AnimationController<>(this, "controllerName", 0, this::predicate));
     }
 
     @Override
     public double getTick(Object o) {
-        return getAge();
+        return tickCount;
     }
 }

@@ -5,7 +5,6 @@ import com.custommobsforge.custommobsforge.common.PresetManager;
 import com.custommobsforge.custommobsforge.common.entity.CustomMob;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -40,7 +39,7 @@ public class SpawnMobPacket {
                     mob.setHealthValue(preset.health());
                     mob.setSpeedValue(preset.speed());
                     mob.setPos(player.getX(), player.getY(), player.getZ());
-                    mob.finalizeSpawn(level, level.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.COMMAND, null, null);
+                    mob.refreshDimensions();
                     level.addFreshEntity(mob);
                 }
             }
