@@ -9,17 +9,16 @@ public class RequestPresetsPacket {
     public RequestPresetsPacket() {
     }
 
+    @SuppressWarnings("unused")
     public RequestPresetsPacket(FriendlyByteBuf buf) {
     }
 
+    @SuppressWarnings("unused")
     public void write(FriendlyByteBuf buf) {
     }
 
     public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> {
-            ServerCustomMobsForge server = new ServerCustomMobsForge();
-            server.onRequestPresets(context.get().getSender());
-        });
+        // Логика обработки уже реализована в NetworkHandler
         context.get().setPacketHandled(true);
     }
 }

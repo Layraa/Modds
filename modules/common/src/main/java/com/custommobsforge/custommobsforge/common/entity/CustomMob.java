@@ -17,8 +17,12 @@ import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.core.animation.AnimationState;
 import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
+@ParametersAreNonnullByDefault
 public class CustomMob extends PathfinderMob implements GeoEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private String modelName;
@@ -65,15 +69,17 @@ public class CustomMob extends PathfinderMob implements GeoEntity {
     }
 
     public void setHealthValue(float health) {
-        if (this.getAttributes().hasAttribute(Attributes.MAX_HEALTH)) {
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
+        var healthAttr = this.getAttributes().getInstance(Attributes.MAX_HEALTH);
+        if (healthAttr != null) {
+            healthAttr.setBaseValue(health);
             this.setHealth(health);
         }
     }
 
     public void setSpeedValue(double speed) {
-        if (this.getAttributes().hasAttribute(Attributes.MOVEMENT_SPEED)) {
-            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(speed);
+        var speedAttr = this.getAttributes().getInstance(Attributes.MOVEMENT_SPEED);
+        if (speedAttr != null) {
+            speedAttr.setBaseValue(speed);
         }
     }
 
@@ -93,9 +99,9 @@ public class CustomMob extends PathfinderMob implements GeoEntity {
         controllers.add(new AnimationController<>(this, "controller", 0, this::animationPredicate));
     }
 
-    private <E extends GeoEntity> AnimationState<E> animationPredicate(AnimationState<E> state) {
+    private <E extends GeoEntity> PlayState animationPredicate(AnimationState<E> state) {
         state.getController().setAnimation(RawAnimation.begin().thenPlay("animation." + getAnimationName() + ".walk"));
-        return state;
+        return PlayState.CONTINUE;
     }
 
     @Override
