@@ -7,10 +7,6 @@ pluginManagement {
             url = 'https://maven.minecraftforge.net/'
         }
         maven {
-            name = 'Fabric'
-            url = 'https://maven.fabricmc.net/'
-        }
-        maven {
             name = 'Sponge Snapshots'
             url = 'https://repo.spongepowered.org/repository/maven-public/'
         }
@@ -21,38 +17,19 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.5.0'
 }
 
-rootProject.name = 'Multiproject Template'
+rootProject.name = 'CustomMobsForge'
 
-// === FORGE ===
-// ----------
-//include "modules:1.12.2"
-//include "modules:1.13.2"
-//include "modules:1.14.4"
-//include "modules:1.15.2"
-//include "modules:1.16.5"
-//include "modules:1.17.1"
-//include "modules:1.18.2"
-//include "modules:1.19.2"
-//include "modules:1.19.2"
-//include "modules:1.19.4"
-//include "modules:1.20.1"
-// ----------
-// === FABRIC ===
-include "modules:fabric_1.20.1"
-// ----------
+// Указываем подпроекты
+include 'common'
+include 'client'
+include 'server'
 
-// You can add as many modules as you want, for this copy the content of "example_module" to each new module!
-include "modules:example_module"
+// Привязываем имена проектов к их физическим папкам
+project(':common').projectDir = file('modules/common')
+project(':client').projectDir = file('modules/client')
+project(':server').projectDir = file('modules/server')
 
-// Example how to use multiple modules within a module:
-
-// include "modules:MODULE_NAME",
-//      "modules:MODULE_NAME:SUB_MODULE_NAME",
-//      "modules:MODULE_NAME:SUB_MODULE_NAME"
-
-// You can even add a Multi-Loader project ! (using Architectury may require some extra steps)
-
-//include "modules:multiproject_module",
-//        "modules:multiproject_module:common",
-//        "modules:multiproject_module:fabric",
-//        "modules:multiproject_module:forge"
+// Переопределяем имена подпроектов
+project(':common').name = 'common'
+project(':client').name = 'client'
+project(':server').name = 'server'

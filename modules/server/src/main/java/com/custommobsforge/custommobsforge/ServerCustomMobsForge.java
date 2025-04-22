@@ -5,8 +5,7 @@ import com.custommobsforge.custommobsforge.common.PresetManager;
 import com.custommobsforge.custommobsforge.common.entity.CustomMob;
 import com.custommobsforge.custommobsforge.common.network.NetworkHandler;
 import com.custommobsforge.custommobsforge.common.network.PresetSyncPacket;
-import com.custommobsforge.custommobsforge.common.network.RequestPresetsPacket;
-import com.custommobsforge.custommobsforge.common.network.ServerCheckPacket;
+import com.custommobsforge.custommobsforge.common.network.OpenGuiPacket;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -20,14 +19,16 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLDedicatedServerSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.network.NetworkDirection;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-@Mod(CustomMobsForge.MOD_ID)
+@Mod(value = ServerCustomMobsForge.MOD_ID)
 @SuppressWarnings("unused")
-public class CustomMobsForge {
+public class ServerCustomMobsForge {
     public static final String MOD_ID = "custommobsforge";
+    private static final Logger LOGGER = LogManager.getLogger();
 
-    public CustomMobsForge() {
+    public ServerCustomMobsForge() {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::serverSetup);
         ModEntities.ENTITIES.register(FMLJavaModLoadingContext.get().getModEventBus());
         MinecraftForge.EVENT_BUS.register(this);
@@ -35,51 +36,10 @@ public class CustomMobsForge {
 
     private void serverSetup(final FMLDedicatedServerSetupEvent event) {
         NetworkHandler.register();
-        // Регистрируем обработчик для ServerCheckPacket
-        NetworkHandler.INSTANCE.messageBuilder(ServerCheckPacket.class, 5, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(ServerCheckPacket::new)
-                .encoder(ServerCheckPacket::write)
-                .consumerMainThread((packet, context) -> {
-                    ServerPlayer player = context.get().getSender();
-                    if (player != null) {
-                        NetworkHandler.sendToPlayer(new ServerCheckPacket(), player);
-                    }
-                    context.get().setPacketHandled(true);
-                })
-                .add();
-
-        // Регистрируем обработчик для RequestPresetsPacket
-        NetworkHandler.INSTANCE.messageBuilder(RequestPresetsPacket.class, 6, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(RequestPresetsPacket::new)
-                .encoder(RequestPresetsPacket::write)
-                .consumerMainThread((packet, context) -> {
-                    ServerPlayer player = context.get().getSender();
-                    if (player != null) {
-                        PresetManager.getInstance().getAllPresets().forEach((name, preset) ->
-                                NetworkHandler.sendToPlayer(
-                                        new PresetSyncPacket(
-                                                preset.name(),
-                                                preset.health(),
-                                                preset.speed(),
-                                                preset.modelName(),
-                                                preset.textureName(),
-                                                preset.animationName()
-                                        ),
-                                        player
-                                )
-                        );
-                    }
-                    context.get().setPacketHandled(true);
-                })
-                .add();
-
-        // Добавим тестовый пресет при запуске сервера
-        PresetManager.getInstance().addPreset("Wolf", 20, 0.3, "wolf", "wolf", "wolf");
     }
 
     @SubscribeEvent
     public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        // Синхронизация пресетов с клиентом при входе игрока
         ServerPlayer player = (ServerPlayer) event.getEntity();
         PresetManager.getInstance().getAllPresets().forEach((name, preset) ->
                 NetworkHandler.sendToPlayer(
@@ -147,6 +107,21 @@ public class CustomMobsForge {
                                                         player
                                                 )
                                         );
+                                    }
+                                    return 1;
+                                })
+                        )
+                        .then(Commands.literal("gui")
+                                .executes(context -> {
+                                    ServerPlayer player = context.getSource().getPlayer();
+                                    if (player != null) {
+                                        LOGGER.info("Sending OpenGuiPacket to player: {}", player.getName().getString());
+                                        NetworkHandler.sendToPlayer(new OpenGuiPacket(), player);
+                                        context.getSource().sendSuccess(() -> Component.literal("Opening Custom Mobs GUI..."), false);
+                                    } else {
+                                        LOGGER.warn("Player is null when executing /custommobsforge gui");
+                                        context.getSource().sendFailure(Component.literal("Cannot open GUI: Player not found."));
+                                        return 0;
                                     }
                                     return 1;
                                 })

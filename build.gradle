@@ -1,19 +1,71 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url = 'https://maven.minecraftforge.net' }
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:6.0.16'
+        classpath 'org.spongepowered:mixingradle:0.7.+'
+    }
+}
+
 plugins {
-    id 'fabric-loom' version '1.3-SNAPSHOT' apply(false)
-    id 'net.minecraftforge.gradle' version '[6.0,6.2)' apply(false)
-    id("org.spongepowered.mixin") version "0.7-SNAPSHOT" apply(false)
+    id 'java'
+}
+
+// Отладочный вывод: какие подпроекты видит Gradle
+task printSubprojects {
+    doLast {
+        println "Subprojects found: ${subprojects.collect { it.name }}"
+    }
+}
+
+allprojects {
+    group = 'com.custommobsforge'
+    version = '1.0.0'
+
+    repositories {
+        mavenCentral()
+        maven { url = 'https://maven.minecraftforge.net' }
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+        maven { url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/' }
+    }
 }
 
 subprojects {
     apply plugin: 'java'
-    java.withSourcesJar()
-    java.withJavadocJar()
+    apply plugin: 'net.minecraftforge.gradle'
 
-    repositories {
-        mavenCentral()
-        maven {
-            name = 'Sponge / Mixin'
-            url = 'https://repo.spongepowered.org/repository/maven-public/'
+    // Источники для каждого модуля
+    sourceSets {
+        main {
+            java {
+                srcDirs = ['src/main/java']
+            }
+            resources {
+                srcDirs = ['src/main/resources']
+            }
+        }
+    }
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+    manifest {
+        attributes([
+                'Specification-Title': 'custommobsforge',
+                'Specification-Vendor': 'custommobsforge',
+                'Specification-Version': '1',
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version,
+                'Implementation-Vendor': 'custommobsforge'
+        ])
+    }
+    // Добавляем выходные данные подпроектов
+    subprojects.each { subproject ->
+        if (subproject.name in ['common', 'client', 'server'] && subproject.sourceSets?.main?.output) {
+            from subproject.sourceSets.main.output
         }
     }
 }
