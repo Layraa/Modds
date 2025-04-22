@@ -9,14 +9,18 @@ public class PresetEditPacket {
     private final String name;
     private final float health;
     private final double speed;
+    private final float sizeWidth;
+    private final float sizeHeight;
     private final String modelName;
     private final String textureName;
     private final String animationName;
 
-    public PresetEditPacket(String name, float health, double speed, String modelName, String textureName, String animationName) {
+    public PresetEditPacket(String name, float health, double speed, float sizeWidth, float sizeHeight, String modelName, String textureName, String animationName) {
         this.name = name;
         this.health = health;
         this.speed = speed;
+        this.sizeWidth = sizeWidth;
+        this.sizeHeight = sizeHeight;
         this.modelName = modelName;
         this.textureName = textureName;
         this.animationName = animationName;
@@ -26,6 +30,8 @@ public class PresetEditPacket {
         this.name = buf.readUtf();
         this.health = buf.readFloat();
         this.speed = buf.readDouble();
+        this.sizeWidth = buf.readFloat();
+        this.sizeHeight = buf.readFloat();
         this.modelName = buf.readUtf();
         this.textureName = buf.readUtf();
         this.animationName = buf.readUtf();
@@ -35,9 +41,14 @@ public class PresetEditPacket {
         buf.writeUtf(name);
         buf.writeFloat(health);
         buf.writeDouble(speed);
+        buf.writeFloat(sizeWidth);
+        buf.writeFloat(sizeHeight);
         buf.writeUtf(modelName);
         buf.writeUtf(textureName);
         buf.writeUtf(animationName);
+    }
+
+    public void handle(Supplier<NetworkEvent.Context> context) {
     }
 
     public String getName() {
@@ -52,6 +63,14 @@ public class PresetEditPacket {
         return speed;
     }
 
+    public float getSizeWidth() {
+        return sizeWidth;
+    }
+
+    public float getSizeHeight() {
+        return sizeHeight;
+    }
+
     public String getModelName() {
         return modelName;
     }
@@ -62,9 +81,5 @@ public class PresetEditPacket {
 
     public String getAnimationName() {
         return animationName;
-    }
-
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().setPacketHandled(true);
     }
 }

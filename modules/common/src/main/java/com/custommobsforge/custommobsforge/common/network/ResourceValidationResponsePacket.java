@@ -11,16 +11,20 @@ public class ResourceValidationResponsePacket {
     private final String name;
     private final float health;
     private final double speed;
+    private final float sizeWidth;
+    private final float sizeHeight;
     private final String model;
     private final String texture;
     private final String animation;
 
-    public ResourceValidationResponsePacket(boolean valid, boolean createMode, String name, float health, double speed, String model, String texture, String animation) {
+    public ResourceValidationResponsePacket(boolean valid, boolean createMode, String name, float health, double speed, float sizeWidth, float sizeHeight, String model, String texture, String animation) {
         this.valid = valid;
         this.createMode = createMode;
         this.name = name;
         this.health = health;
         this.speed = speed;
+        this.sizeWidth = sizeWidth;
+        this.sizeHeight = sizeHeight;
         this.model = model;
         this.texture = texture;
         this.animation = animation;
@@ -32,6 +36,8 @@ public class ResourceValidationResponsePacket {
         this.name = buf.readUtf();
         this.health = buf.readFloat();
         this.speed = buf.readDouble();
+        this.sizeWidth = buf.readFloat();
+        this.sizeHeight = buf.readFloat();
         this.model = buf.readUtf();
         this.texture = buf.readUtf();
         this.animation = buf.readUtf();
@@ -43,9 +49,14 @@ public class ResourceValidationResponsePacket {
         buf.writeUtf(name);
         buf.writeFloat(health);
         buf.writeDouble(speed);
+        buf.writeFloat(sizeWidth);
+        buf.writeFloat(sizeHeight);
         buf.writeUtf(model);
         buf.writeUtf(texture);
         buf.writeUtf(animation);
+    }
+
+    public void handle(Supplier<NetworkEvent.Context> context) {
     }
 
     public boolean isValid() {
@@ -68,6 +79,14 @@ public class ResourceValidationResponsePacket {
         return speed;
     }
 
+    public float getSizeWidth() {
+        return sizeWidth;
+    }
+
+    public float getSizeHeight() {
+        return sizeHeight;
+    }
+
     public String getModel() {
         return model;
     }
@@ -78,9 +97,5 @@ public class ResourceValidationResponsePacket {
 
     public String getAnimation() {
         return animation;
-    }
-
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        // Логика обработки перенесена в ClientPacketHandler
     }
 }

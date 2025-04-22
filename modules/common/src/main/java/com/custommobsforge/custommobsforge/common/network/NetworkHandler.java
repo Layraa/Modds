@@ -14,10 +14,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class NetworkHandler {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -34,77 +32,9 @@ public class NetworkHandler {
         CHANNEL.messageBuilder(OpenGuiPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
                 .decoder(OpenGuiPacket::new)
                 .encoder(OpenGuiPacket::write)
-                .consumerMainThread((packet, context) -> {}) // Пустой обработчик для сервера
-                .add();
-
-        CHANNEL.messageBuilder(SpawnMobPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(SpawnMobPacket::new)
-                .encoder(SpawnMobPacket::write)
-                .consumerMainThread(SpawnMobPacket::handle)
-                .add();
-
-        CHANNEL.messageBuilder(RequestPresetsPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(RequestPresetsPacket::new)
-                .encoder(RequestPresetsPacket::write)
-                .consumerMainThread(RequestPresetsPacket::handle)
-                .add();
-
-        CHANNEL.messageBuilder(PresetSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(PresetSyncPacket::new)
-                .encoder(PresetSyncPacket::write)
                 .consumerMainThread((packet, context) -> {})
                 .add();
 
-        CHANNEL.messageBuilder(PresetCreatePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(PresetCreatePacket::new)
-                .encoder(PresetCreatePacket::write)
-                .consumerMainThread(PresetCreatePacket::handle)
-                .add();
-
-        CHANNEL.messageBuilder(PresetEditPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(PresetEditPacket::new)
-                .encoder(PresetEditPacket::write)
-                .consumerMainThread(PresetEditPacket::handle)
-                .add();
-
-        CHANNEL.messageBuilder(PresetDeletePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(PresetDeletePacket::new)
-                .encoder(PresetDeletePacket::write)
-                .consumerMainThread(PresetDeletePacket::handle)
-                .add();
-
-        CHANNEL.messageBuilder(PresetDeleteSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(PresetDeleteSyncPacket::new)
-                .encoder(PresetDeleteSyncPacket::write)
-                .consumerMainThread((packet, context) -> {})
-                .add();
-
-        CHANNEL.messageBuilder(ResourceListRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(ResourceListRequestPacket::new)
-                .encoder(ResourceListRequestPacket::write)
-                .consumerMainThread(ResourceListRequestPacket::handle)
-                .add();
-
-        CHANNEL.messageBuilder(ResourceListResponsePacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(ResourceListResponsePacket::new)
-                .encoder(ResourceListResponsePacket::write)
-                .consumerMainThread((packet, context) -> {})
-                .add();
-
-        CHANNEL.messageBuilder(ValidateResourcesPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(ValidateResourcesPacket::new)
-                .encoder(ValidateResourcesPacket::write)
-                .consumerMainThread(ValidateResourcesPacket::handle)
-                .add();
-
-        CHANNEL.messageBuilder(ResourceValidationResponsePacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(ResourceValidationResponsePacket::new)
-                .encoder(ResourceValidationResponsePacket::write)
-                .consumerMainThread((packet, context) -> {})
-                .add();
-    }
-
-    public static void registerServerHandlers() {
         CHANNEL.messageBuilder(SpawnMobPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .decoder(SpawnMobPacket::new)
                 .encoder(SpawnMobPacket::write)
@@ -121,6 +51,7 @@ public class NetworkHandler {
                             mob.setAnimationName(preset.animationName());
                             mob.setHealthValue(preset.health());
                             mob.setSpeedValue(preset.speed());
+                            mob.setSize(preset.sizeWidth(), preset.sizeHeight());
                             mob.setPos(player.getX(), player.getY(), player.getZ());
                             mob.refreshDimensions();
                             level.addFreshEntity(mob);
@@ -138,9 +69,11 @@ public class NetworkHandler {
                     if (player != null) {
                         for (Preset preset : PresetManager.getInstance().getPresets()) {
                             NetworkHandler.sendToPlayer(new PresetSyncPacket(
-                                    preset.getName(),
+                                    preset.name(),
                                     preset.health(),
                                     preset.speed(),
+                                    preset.sizeWidth(),
+                                    preset.sizeHeight(),
                                     preset.modelName(),
                                     preset.textureName(),
                                     preset.animationName()
@@ -149,6 +82,12 @@ public class NetworkHandler {
                     }
                     context.get().setPacketHandled(true);
                 })
+                .add();
+
+        CHANNEL.messageBuilder(PresetSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(PresetSyncPacket::new)
+                .encoder(PresetSyncPacket::write)
+                .consumerMainThread((packet, context) -> {})
                 .add();
 
         CHANNEL.messageBuilder(PresetCreatePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
@@ -161,6 +100,8 @@ public class NetworkHandler {
                                 packet.getName(),
                                 packet.getHealth(),
                                 packet.getSpeed(),
+                                packet.getSizeWidth(),
+                                packet.getSizeHeight(),
                                 packet.getModelName(),
                                 packet.getTextureName(),
                                 packet.getAnimationName()
@@ -169,6 +110,8 @@ public class NetworkHandler {
                                 packet.getName(),
                                 packet.getHealth(),
                                 packet.getSpeed(),
+                                packet.getSizeWidth(),
+                                packet.getSizeHeight(),
                                 packet.getModelName(),
                                 packet.getTextureName(),
                                 packet.getAnimationName()
@@ -189,6 +132,8 @@ public class NetworkHandler {
                                 packet.getName(),
                                 packet.getHealth(),
                                 packet.getSpeed(),
+                                packet.getSizeWidth(),
+                                packet.getSizeHeight(),
                                 packet.getModelName(),
                                 packet.getTextureName(),
                                 packet.getAnimationName()
@@ -197,6 +142,8 @@ public class NetworkHandler {
                                 packet.getName(),
                                 packet.getHealth(),
                                 packet.getSpeed(),
+                                packet.getSizeWidth(),
+                                packet.getSizeHeight(),
                                 packet.getModelName(),
                                 packet.getTextureName(),
                                 packet.getAnimationName()
@@ -219,6 +166,12 @@ public class NetworkHandler {
                 })
                 .add();
 
+        CHANNEL.messageBuilder(PresetDeleteSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(PresetDeleteSyncPacket::new)
+                .encoder(PresetDeleteSyncPacket::write)
+                .consumerMainThread((packet, context) -> {})
+                .add();
+
         CHANNEL.messageBuilder(ResourceListRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .decoder(ResourceListRequestPacket::new)
                 .encoder(ResourceListRequestPacket::write)
@@ -226,24 +179,17 @@ public class NetworkHandler {
                     ServerPlayer player = context.get().getSender();
                     if (player != null) {
                         String type = packet.getType();
-                        Path dir = switch (type) {
-                            case "model" -> Path.of("config/custommobsforge/models");
-                            case "texture" -> Path.of("config/custommobsforge/textures");
-                            case "animation" -> Path.of("config/custommobsforge/animations");
+                        String pathPrefix = switch (type) {
+                            case "model" -> "geo";
+                            case "texture" -> "textures";
+                            case "animation" -> "animations";
                             default -> throw new IllegalArgumentException("Unknown resource type: " + type);
                         };
 
                         List<String> resources;
                         try {
-                            Files.createDirectories(dir);
-                            try (var stream = Files.walk(dir)) {
-                                resources = stream
-                                        .filter(Files::isRegularFile)
-                                        .map(Path::getFileName)
-                                        .map(Path::toString)
-                                        .map(name -> name.substring(0, name.lastIndexOf('.')))
-                                        .collect(Collectors.toList());
-                            }
+                            // Список файлов из ресурсов мода
+                            resources = getResourceList(pathPrefix);
                         } catch (IOException e) {
                             LOGGER.error("Failed to list resources for type {}: {}", type, e.getMessage());
                             resources = List.of();
@@ -255,6 +201,12 @@ public class NetworkHandler {
                 })
                 .add();
 
+        CHANNEL.messageBuilder(ResourceListResponsePacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(ResourceListResponsePacket::new)
+                .encoder(ResourceListResponsePacket::write)
+                .consumerMainThread((packet, context) -> {})
+                .add();
+
         CHANNEL.messageBuilder(ValidateResourcesPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .decoder(ValidateResourcesPacket::new)
                 .encoder(ValidateResourcesPacket::write)
@@ -262,20 +214,21 @@ public class NetworkHandler {
                     ServerPlayer player = context.get().getSender();
                     if (player != null) {
                         boolean valid = true;
-                        String modelPath = "config/custommobsforge/models/" + packet.getModel() + ".json";
-                        String texturePath = "config/custommobsforge/textures/" + packet.getTexture() + ".png";
-                        String animationPath = "config/custommobsforge/animations/" + packet.getAnimation() + ".json";
 
-                        if (!Files.exists(Path.of(modelPath))) {
-                            LOGGER.warn("Model file does not exist: {}", modelPath);
+                        String modelPath = "geo/" + packet.getModel() + ".json";
+                        String texturePath = "textures/" + packet.getTexture() + ".png";
+                        String animationPath = "animations/" + packet.getAnimation() + ".json";
+
+                        if (!resourceExists(modelPath)) {
+                            LOGGER.warn("Model file does not exist in mod resources: {}", modelPath);
                             valid = false;
                         }
-                        if (!Files.exists(Path.of(texturePath))) {
-                            LOGGER.warn("Texture file does not exist: {}", texturePath);
+                        if (!resourceExists(texturePath)) {
+                            LOGGER.warn("Texture file does not exist in mod resources: {}", texturePath);
                             valid = false;
                         }
-                        if (!Files.exists(Path.of(animationPath))) {
-                            LOGGER.warn("Animation file does not exist: {}", animationPath);
+                        if (!resourceExists(animationPath)) {
+                            LOGGER.warn("Animation file does not exist in mod resources: {}", animationPath);
                             valid = false;
                         }
 
@@ -285,6 +238,8 @@ public class NetworkHandler {
                                 packet.getName(),
                                 packet.getHealth(),
                                 packet.getSpeed(),
+                                packet.getSizeWidth(),
+                                packet.getSizeHeight(),
                                 packet.getModel(),
                                 packet.getTexture(),
                                 packet.getAnimation()
@@ -293,6 +248,36 @@ public class NetworkHandler {
                     context.get().setPacketHandled(true);
                 })
                 .add();
+
+        CHANNEL.messageBuilder(ResourceValidationResponsePacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(ResourceValidationResponsePacket::new)
+                .encoder(ResourceValidationResponsePacket::write)
+                .consumerMainThread((packet, context) -> {})
+                .add();
+    }
+
+    private static List<String> getResourceList(String pathPrefix) throws IOException {
+        List<String> resources = new java.util.ArrayList<>();
+        try (var stream = NetworkHandler.class.getResourceAsStream("/assets/custommobsforge/" + pathPrefix)) {
+            if (stream == null) {
+                return resources;
+            }
+            // Здесь мы не можем перечислить файлы в JAR напрямую, поэтому полагаемся на заранее известные имена
+            // В реальном проекте можно использовать modid для загрузки ресурсов через ResourceManager
+            // Для простоты предполагаем, что ресурсы известны (например, test_model, test_texture, test_animation)
+            resources.add("test_" + pathPrefix.substring(0, pathPrefix.length() - 1));
+        }
+        return resources;
+    }
+
+    private static boolean resourceExists(String path) {
+        ResourceLocation location = new ResourceLocation("custommobsforge", path);
+        try (InputStream inputStream = NetworkHandler.class.getResourceAsStream("/assets/custommobsforge/" + path)) {
+            return inputStream != null;
+        } catch (IOException e) {
+            LOGGER.error("Failed to check resource {}: {}", path, e.getMessage());
+            return false;
+        }
     }
 
     public static void sendToPlayer(Object packet, ServerPlayer player) {

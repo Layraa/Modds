@@ -27,6 +27,8 @@ public class ClientPacketHandler {
                     packet.getName(),
                     packet.getHealth(),
                     packet.getSpeed(),
+                    packet.getSizeWidth(),
+                    packet.getSizeHeight(),
                     packet.getModelName(),
                     packet.getTextureName(),
                     packet.getAnimationName()
@@ -69,6 +71,8 @@ public class ClientPacketHandler {
                         packet.getName(),
                         packet.getHealth(),
                         packet.getSpeed(),
+                        packet.getSizeWidth(),
+                        packet.getSizeHeight(),
                         packet.getModel(),
                         packet.getTexture(),
                         packet.getAnimation()
@@ -80,6 +84,8 @@ public class ClientPacketHandler {
                         packet.getName(),
                         packet.getHealth(),
                         packet.getSpeed(),
+                        packet.getSizeWidth(),
+                        packet.getSizeHeight(),
                         packet.getModel(),
                         packet.getTexture(),
                         packet.getAnimation()

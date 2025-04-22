@@ -1,6 +1,6 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
-import com.custommobsforge.custommobsforge.client.ClientNetworkHandler; // Новый импорт
+import com.custommobsforge.custommobsforge.client.ClientNetworkHandler;
 import com.custommobsforge.custommobsforge.common.Preset;
 import com.custommobsforge.custommobsforge.common.PresetManager;
 import com.custommobsforge.custommobsforge.common.network.*;
@@ -19,6 +19,7 @@ public class PresetManagerScreen extends Screen {
     private String selectedPreset;
     private Button editButton;
     private Button deleteButton;
+    public static String selectedPresetName;
 
     public PresetManagerScreen() {
         super(Component.literal("Preset Manager"));
@@ -35,15 +36,15 @@ public class PresetManagerScreen extends Screen {
 
         this.addRenderableWidget(Button.builder(Component.literal("Spawn Mob"), button -> {
             if (selectedPreset != null) {
-                ClientNetworkHandler.sendToServer(new SpawnMobPacket(selectedPreset)); // Обновлено
+                ClientNetworkHandler.sendToServer(new SpawnMobPacket(selectedPreset));
                 this.minecraft.setScreen(null);
             }
         }).pos(this.width - 110, buttonY).size(100, 20).build());
 
-        ClientNetworkHandler.sendToServer(new RequestPresetsPacket()); // Обновлено
-        ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("model")); // Обновлено
-        ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("texture")); // Обновлено
-        ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("animation")); // Обновлено
+        ClientNetworkHandler.sendToServer(new RequestPresetsPacket());
+        ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("model"));
+        ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("texture"));
+        ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("animation"));
     }
 
     @Override
@@ -58,13 +59,15 @@ public class PresetManagerScreen extends Screen {
             int buttonY = this.presetList.getTop() + (this.presetList.getBottom() - this.presetList.getTop() - 20) / 2;
 
             if (editButton == null) {
-                editButton = Button.builder(Component.literal("Edit"), button -> this.minecraft.setScreen(new PresetEditorScreen(false)))
-                        .pos(buttonX, buttonY).size(60, 20).build();
+                editButton = Button.builder(Component.literal("Edit"), button -> {
+                    selectedPresetName = selectedPreset;
+                    this.minecraft.setScreen(new PresetEditorScreen(false));
+                }).pos(buttonX, buttonY).size(60, 20).build();
                 this.addRenderableWidget(editButton);
             }
             if (deleteButton == null) {
                 deleteButton = Button.builder(Component.literal("Delete"), button -> {
-                    ClientNetworkHandler.sendToServer(new PresetDeletePacket(selectedPreset)); // Обновлено
+                    ClientNetworkHandler.sendToServer(new PresetDeletePacket(selectedPreset));
                     this.presetList.refreshEntries();
                 }).pos(buttonX + 65, buttonY).size(60, 20).build();
                 this.addRenderableWidget(deleteButton);
@@ -99,17 +102,20 @@ public class PresetManagerScreen extends Screen {
         return presetList;
     }
 
-    public void handleResourceList(String type, List<String> resources) {
-        // Метод пока пустой, но его вызов теперь будет происходить из ResourceListResponsePacket
-        // В будущем здесь можно реализовать автодополнение для полей ввода
+    public static Preset getSelectedPreset() {
+        return PresetManager.getInstance().getPreset(selectedPresetName);
     }
 
-    public void handleResourceValidation(boolean valid, boolean createMode, String name, float health, double speed, String model, String texture, String animation) {
+    public void handleResourceList(String type, List<String> resources) {
+        // Метод пока пустой, но его вызов теперь будет происходить из ResourceListResponsePacket
+    }
+
+    public void handleResourceValidation(boolean valid, boolean createMode, String name, float health, double speed, float sizeWidth, float sizeHeight, String model, String texture, String animation) {
         if (valid) {
             if (createMode) {
-                ClientNetworkHandler.sendToServer(new PresetCreatePacket(name, health, speed, model, texture, animation)); // Обновлено
+                ClientNetworkHandler.sendToServer(new PresetCreatePacket(name, health, speed, sizeWidth, sizeHeight, model, texture, animation));
             } else {
-                ClientNetworkHandler.sendToServer(new PresetEditPacket(name, health, speed, model, texture, animation)); // Обновлено
+                ClientNetworkHandler.sendToServer(new PresetEditPacket(name, health, speed, sizeWidth, sizeHeight, model, texture, animation));
             }
             this.presetList.refreshEntries();
         } else {
