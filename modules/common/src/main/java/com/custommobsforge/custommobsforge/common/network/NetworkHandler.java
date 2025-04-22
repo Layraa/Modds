@@ -1,6 +1,7 @@
 package com.custommobsforge.custommobsforge.common.network;
 
 import com.custommobsforge.custommobsforge.common.ModEntities;
+import com.custommobsforge.custommobsforge.common.Preset;
 import com.custommobsforge.custommobsforge.common.PresetManager;
 import com.custommobsforge.custommobsforge.common.entity.CustomMob;
 import net.minecraft.resources.ResourceLocation;
@@ -135,7 +136,7 @@ public class NetworkHandler {
                 .consumerMainThread((packet, context) -> {
                     ServerPlayer player = context.get().getSender();
                     if (player != null) {
-                        for (var preset : PresetManager.getInstance().getPresets()) {
+                        for (Preset preset : PresetManager.getInstance().getPresets()) {
                             NetworkHandler.sendToPlayer(new PresetSyncPacket(
                                     preset.getName(),
                                     preset.health(),
@@ -256,7 +257,7 @@ public class NetworkHandler {
 
         CHANNEL.messageBuilder(ValidateResourcesPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .decoder(ValidateResourcesPacket::new)
-                .encoderMorgan(ValidateResourcesPacket::write)
+                .encoder(ValidateResourcesPacket::write)
                 .consumerMainThread((packet, context) -> {
                     ServerPlayer player = context.get().getSender();
                     if (player != null) {

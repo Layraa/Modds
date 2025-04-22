@@ -1,5 +1,6 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
+import com.custommobsforge.custommobsforge.common.Preset;
 import com.custommobsforge.custommobsforge.common.PresetManager;
 import com.custommobsforge.custommobsforge.common.network.*;
 import net.minecraft.client.gui.GuiGraphics;
