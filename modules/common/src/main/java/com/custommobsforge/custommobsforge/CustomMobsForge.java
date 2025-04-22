@@ -2,26 +2,17 @@ package com.custommobsforge.custommobsforge;
 
 import com.custommobsforge.custommobsforge.common.entity.ModEntities;
 import com.custommobsforge.custommobsforge.common.network.NetworkHandler;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
-@Mod(CustomMobsForge.MODID)
 public class CustomMobsForge {
     public static final String MODID = "custommobsforge";
 
     public CustomMobsForge() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-
-        ModEntities.ENTITIES.register(modEventBus);
-
-        modEventBus.addListener(this::onCommonSetup);
-        MinecraftForge.EVENT_BUS.register(this);
+        // Пустой конструктор, инициализация будет вызываться из client/server
     }
 
-    private void onCommonSetup(final FMLCommonSetupEvent event) {
+    public void register(IEventBus modEventBus) {
+        ModEntities.ENTITIES.register(modEventBus);
         NetworkHandler.register();
     }
 }

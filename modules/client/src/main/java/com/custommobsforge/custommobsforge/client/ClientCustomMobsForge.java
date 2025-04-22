@@ -1,5 +1,6 @@
 package com.custommobsforge.custommobsforge.client;
 
+import com.custommobsforge.custommobsforge.CustomMobsForge;
 import com.custommobsforge.custommobsforge.client.clien.ClientNetworkHandler;
 import com.custommobsforge.custommobsforge.client.gui.PresetEditorScreen;
 import com.custommobsforge.custommobsforge.client.gui.PresetManagerScreen;
@@ -10,21 +11,32 @@ import com.custommobsforge.custommobsforge.common.network.*;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.network.NetworkEvent;
 
-@Mod.EventBusSubscriber(modid = "custommobsforge", value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
+@Mod("custommobsforge_client")
+@Mod.EventBusSubscriber(modid = "custommobsforge_client", value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ClientCustomMobsForge {
+    private final CustomMobsForge commonInitializer;
+
+    public ClientCustomMobsForge() {
+        commonInitializer = new CustomMobsForge();
+        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        commonInitializer.register(modEventBus);
+        modEventBus.addListener(this::onClientSetup);
+    }
 
     @SubscribeEvent
-    public static void onClientSetup(FMLClientSetupEvent event) {
+    public void onClientSetup(FMLClientSetupEvent event) {
         ClientNetworkHandler.register();
     }
 
     @SubscribeEvent
-    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+    public void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.CUSTOM_MOB.get(), CustomMobRenderer::new);
     }
 

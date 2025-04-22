@@ -20,7 +20,7 @@ import java.util.List;
 public class NetworkHandler {
     private static final Logger LOGGER = LogManager.getLogger();
     private static final String PROTOCOL_VERSION = "1";
-    private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
+    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation("custommobsforge", "main"),
             () -> PROTOCOL_VERSION,
             PROTOCOL_VERSION::equals,

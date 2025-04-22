@@ -1,11 +1,25 @@
 modLoader="javafml"
 loaderVersion="[47,)"
-license="All Rights Reserved"
-issueTrackerURL="https://github.com/yourusername/yourmod/issues"
+license="ALL Rights Reserved"
+issueTrackerURL="https://example.com/issues"
 
 [[mods]]
-modId="custommobsforge"
+modId="custommobsforge_server"
 version="1.0.0"
-displayName="Custom Mobs Forge"
-description="A mod that adds custom mobs to Minecraft."
-authors="Your Name"
+displayName="Custom Mobs Forge Server"
+description="Server module for Custom Mobs Forge."
+authors="YourName"
+
+[[dependencies.custommobsforge_server]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="SERVER"
+
+[[dependencies.custommobsforge_server]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="SERVER"
