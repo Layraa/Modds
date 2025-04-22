@@ -1,8 +1,8 @@
 package com.custommobsforge.custommobsforge;
 
-import com.custommobsforge.custommobsforge.common.CustomMobsForgeCommand;
-import com.custommobsforge.custommobsforge.common.Preset;
-import com.custommobsforge.custommobsforge.common.PresetManager;
+import com.custommobsforge.custommobsforge.common.preset.CustomMobsForgeCommand;
+import com.custommobsforge.custommobsforge.common.preset.Preset;
+import com.custommobsforge.custommobsforge.common.preset.PresetManager;
 import com.custommobsforge.custommobsforge.common.network.NetworkHandler;
 import com.custommobsforge.custommobsforge.common.network.PresetSyncPacket;
 import net.minecraft.server.level.ServerPlayer;

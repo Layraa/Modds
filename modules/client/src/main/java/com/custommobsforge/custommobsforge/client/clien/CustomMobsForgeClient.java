@@ -1,8 +1,8 @@
-package com.custommobsforge.custommobsforge.client;
+package com.custommobsforge.custommobsforge.client.clien;
 
 import com.custommobsforge.custommobsforge.CustomMobsForge;
 import com.custommobsforge.custommobsforge.client.render.CustomMobRenderer;
-import com.custommobsforge.custommobsforge.common.ModEntities;
+import com.custommobsforge.custommobsforge.common.entity.ModEntities;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;

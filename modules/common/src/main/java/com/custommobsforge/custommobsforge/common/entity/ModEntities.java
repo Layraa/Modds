@@ -1,7 +1,6 @@
-package com.custommobsforge.custommobsforge.common;
+package com.custommobsforge.custommobsforge.common.entity;
 
 import com.custommobsforge.custommobsforge.CustomMobsForge;
-import com.custommobsforge.custommobsforge.common.entity.CustomMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraftforge.registries.DeferredRegister;

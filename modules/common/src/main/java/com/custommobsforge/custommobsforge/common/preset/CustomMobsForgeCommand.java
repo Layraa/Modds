@@ -1,4 +1,4 @@
-package com.custommobsforge.custommobsforge.common;
+package com.custommobsforge.custommobsforge.common.preset;
 
 import com.custommobsforge.custommobsforge.common.network.NetworkHandler;
 import com.custommobsforge.custommobsforge.common.network.OpenGuiPacket;

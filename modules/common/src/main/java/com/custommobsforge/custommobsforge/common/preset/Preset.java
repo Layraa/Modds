@@ -1,4 +1,4 @@
-package com.custommobsforge.custommobsforge.common;
+package com.custommobsforge.custommobsforge.common.preset;
 
 public record Preset(String name, float health, double speed, float sizeWidth, float sizeHeight, String modelName, String textureName, String animationName) {
     public Preset {

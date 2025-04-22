@@ -1,11 +1,11 @@
 package com.custommobsforge.custommobsforge.client;
 
+import com.custommobsforge.custommobsforge.client.clien.ClientNetworkHandler;
 import com.custommobsforge.custommobsforge.client.gui.PresetEditorScreen;
 import com.custommobsforge.custommobsforge.client.gui.PresetManagerScreen;
 import com.custommobsforge.custommobsforge.client.render.CustomMobRenderer;
-import com.custommobsforge.custommobsforge.common.ModEntities;
-import com.custommobsforge.custommobsforge.common.Preset;
-import com.custommobsforge.custommobsforge.common.PresetManager;
+import com.custommobsforge.custommobsforge.common.entity.ModEntities;
+import com.custommobsforge.custommobsforge.common.preset.PresetManager;
 import com.custommobsforge.custommobsforge.common.network.*;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;

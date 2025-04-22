@@ -1,4 +1,4 @@
-package com.custommobsforge.custommobsforge.common;
+package com.custommobsforge.custommobsforge.common.preset;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

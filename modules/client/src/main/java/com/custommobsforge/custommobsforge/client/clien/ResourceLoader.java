@@ -1,4 +1,4 @@
-package com.custommobsforge.custommobsforge.client;
+package com.custommobsforge.custommobsforge.client.clien;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;

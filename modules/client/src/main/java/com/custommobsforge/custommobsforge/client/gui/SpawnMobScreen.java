@@ -1,7 +1,7 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
-import com.custommobsforge.custommobsforge.client.ClientNetworkHandler;
-import com.custommobsforge.custommobsforge.common.Preset;
+import com.custommobsforge.custommobsforge.client.clien.ClientNetworkHandler;
+import com.custommobsforge.custommobsforge.common.preset.Preset;
 import com.custommobsforge.custommobsforge.common.network.SpawnMobPacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;

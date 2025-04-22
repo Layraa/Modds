@@ -1,8 +1,8 @@
-package com.custommobsforge.custommobsforge.client;
+package com.custommobsforge.custommobsforge.client.clien;
 
 import com.custommobsforge.custommobsforge.client.gui.PresetEditorScreen;
 import com.custommobsforge.custommobsforge.client.gui.PresetManagerScreen;
-import com.custommobsforge.custommobsforge.common.PresetManager;
+import com.custommobsforge.custommobsforge.common.preset.PresetManager;
 import com.custommobsforge.custommobsforge.common.network.OpenGuiPacket;
 import com.custommobsforge.custommobsforge.common.network.PresetDeleteSyncPacket;
 import com.custommobsforge.custommobsforge.common.network.PresetSyncPacket;

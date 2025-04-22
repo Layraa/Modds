@@ -1,6 +1,6 @@
 package com.custommobsforge.custommobsforge;
 
-import com.custommobsforge.custommobsforge.common.ModEntities;
+import com.custommobsforge.custommobsforge.common.entity.ModEntities;
 import com.custommobsforge.custommobsforge.common.network.NetworkHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;

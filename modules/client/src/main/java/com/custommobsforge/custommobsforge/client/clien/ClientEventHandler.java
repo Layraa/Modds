@@ -1,4 +1,4 @@
-package com.custommobsforge.custommobsforge.client;
+package com.custommobsforge.custommobsforge.client.clien;
 
 import com.custommobsforge.custommobsforge.client.gui.MainMenuScreen;
 import com.custommobsforge.custommobsforge.common.event.OpenGuiEvent;

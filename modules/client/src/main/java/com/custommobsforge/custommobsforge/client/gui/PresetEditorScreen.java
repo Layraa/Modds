@@ -1,6 +1,6 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
-import com.custommobsforge.custommobsforge.client.ClientNetworkHandler;
+import com.custommobsforge.custommobsforge.client.clien.ClientNetworkHandler;
 import com.custommobsforge.custommobsforge.common.network.ResourceListRequestPacket;
 import com.custommobsforge.custommobsforge.common.network.ValidateResourcesPacket;
 import net.minecraft.client.gui.GuiGraphics;

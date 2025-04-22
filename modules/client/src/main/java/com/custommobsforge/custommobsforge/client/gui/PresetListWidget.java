@@ -1,6 +1,6 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
-import com.custommobsforge.custommobsforge.common.Preset;
+import com.custommobsforge.custommobsforge.common.preset.Preset;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.network.chat.Component;

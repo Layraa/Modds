@@ -1,8 +1,8 @@
 package com.custommobsforge.custommobsforge.common.network;
 
-import com.custommobsforge.custommobsforge.common.ModEntities;
-import com.custommobsforge.custommobsforge.common.Preset;
-import com.custommobsforge.custommobsforge.common.PresetManager;
+import com.custommobsforge.custommobsforge.common.entity.ModEntities;
+import com.custommobsforge.custommobsforge.common.preset.Preset;
+import com.custommobsforge.custommobsforge.common.preset.PresetManager;
 import com.custommobsforge.custommobsforge.common.entity.CustomMob;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
