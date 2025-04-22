@@ -1,10 +1,9 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
 import com.custommobsforge.custommobsforge.common.network.*;
-import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.ErrorScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
@@ -142,20 +141,20 @@ public class PresetEditorScreen extends Screen {
             }
             this.minecraft.setScreen(new PresetManagerScreen());
         } else {
-            this.minecraft.setScreen(new ErrorScreen(Component.literal("Error"), Component.literal("Invalid resources. Please check the model, texture, and animation files.")));
+            this.minecraft.setScreen(new net.minecraft.client.gui.screens.GenericDirtMessageScreen(Component.literal("Invalid resources. Please check the model, texture, and animation files.")));
         }
     }
 
     @Override
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(poseStack);
-        drawCenteredString(poseStack, this.font, this.title, this.width / 2, 20, 0xFFFFFF);
-        drawString(poseStack, this.font, "Name:", this.width / 2 - 150, this.height / 2 - 55, 0xFFFFFF);
-        drawString(poseStack, this.font, "Health:", this.width / 2 - 150, this.height / 2 - 25, 0xFFFFFF);
-        drawString(poseStack, this.font, "Speed:", this.width / 2 - 150, this.height / 2 + 5, 0xFFFFFF);
-        drawString(poseStack, this.font, "Model:", this.width / 2 - 150, this.height / 2 + 35, 0xFFFFFF);
-        drawString(poseStack, this.font, "Texture:", this.width / 2 - 150, this.height / 2 + 65, 0xFFFFFF);
-        drawString(poseStack, this.font, "Animation:", this.width / 2 - 150, this.height / 2 + 95, 0xFFFFFF);
-        super.render(poseStack, mouseX, mouseY, partialTicks);
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(guiGraphics);
+        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 20, 0xFFFFFF);
+        guiGraphics.drawString(this.font, "Name:", this.width / 2 - 150, this.height / 2 - 55, 0xFFFFFF);
+        guiGraphics.drawString(this.font, "Health:", this.width / 2 - 150, this.height / 2 - 25, 0xFFFFFF);
+        guiGraphics.drawString(this.font, "Speed:", this.width / 2 - 150, this.height / 2 + 5, 0xFFFFFF);
+        guiGraphics.drawString(this.font, "Model:", this.width / 2 - 150, this.height / 2 + 35, 0xFFFFFF);
+        guiGraphics.drawString(this.font, "Texture:", this.width / 2 - 150, this.height / 2 + 65, 0xFFFFFF);
+        guiGraphics.drawString(this.font, "Animation:", this.width / 2 - 150, this.height / 2 + 95, 0xFFFFFF);
+        super.render(guiGraphics, mouseX, mouseY, partialTicks);
     }
 }

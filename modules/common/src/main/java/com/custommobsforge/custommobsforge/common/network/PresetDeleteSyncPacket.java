@@ -22,9 +22,7 @@ public class PresetDeleteSyncPacket {
     }
 
     public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> {
-            PresetManager.getInstance().deletePreset(name);
-        });
+        context.get().enqueueWork(() -> PresetManager.getInstance().removePreset(name));
         context.get().setPacketHandled(true);
     }
 }

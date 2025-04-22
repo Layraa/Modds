@@ -1,7 +1,8 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
+import com.custommobsforge.custommobsforge.common.PresetManager;
 import com.custommobsforge.custommobsforge.common.network.*;
-import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -15,6 +16,8 @@ public class PresetManagerScreen extends Screen {
     private List<String> models = new ArrayList<>();
     private List<String> textures = new ArrayList<>();
     private List<String> animations = new ArrayList<>();
+    private Button editButton;
+    private Button deleteButton;
 
     public PresetManagerScreen() {
         super(Component.literal("Preset Manager"));
@@ -22,7 +25,7 @@ public class PresetManagerScreen extends Screen {
 
     @Override
     protected void init() {
-        this.presetList = new PresetListWidget(this, this.minecraft, this.width / 2, this.height, 50, this.height - 50, 30);
+        this.presetList = new PresetListWidget(this, this.minecraft, this.width / 2, this.height, 50, this.height - 50);
         this.addWidget(this.presetList);
 
         int buttonY = this.height - 40;
@@ -43,26 +46,52 @@ public class PresetManagerScreen extends Screen {
     }
 
     @Override
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(poseStack);
-        this.presetList.render(poseStack, mouseX, mouseY, partialTicks);
-        drawCenteredString(poseStack, this.font, this.title, this.width / 2, 20, 0xFFFFFF);
-        super.render(poseStack, mouseX, mouseY, partialTicks);
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(guiGraphics);
+        this.presetList.render(guiGraphics, mouseX, mouseY, partialTicks);
+        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 20, 0xFFFFFF);
+        super.render(guiGraphics, mouseX, mouseY, partialTicks);
 
         if (this.presetList.getSelected() != null) {
             int buttonX = this.width / 2 + 10;
             int buttonY = this.presetList.getTop() + (this.presetList.getBottom() - this.presetList.getTop() - 20) / 2;
-            this.presetList.getSelected().addButtons(buttonX, buttonY);
+
+            if (editButton == null) {
+                editButton = Button.builder(Component.literal("Edit"), button -> this.minecraft.setScreen(new PresetEditorScreen(false)))
+                        .pos(buttonX, buttonY).size(60, 20).build();
+                this.addRenderableWidget(editButton);
+            }
+            if (deleteButton == null) {
+                deleteButton = Button.builder(Component.literal("Delete"), button -> {
+                    NetworkHandler.sendToServer(new PresetDeletePacket(selectedPreset));
+                    this.presetList.refreshEntries();
+                }).pos(buttonX + 65, buttonY).size(60, 20).build();
+                this.addRenderableWidget(deleteButton);
+            }
+        } else {
+            if (editButton != null) {
+                this.removeWidget(editButton);
+                editButton = null;
+            }
+            if (deleteButton != null) {
+                this.removeWidget(deleteButton);
+                deleteButton = null;
+            }
         }
     }
 
     public void setSelectedPreset(String presetName) {
         this.selectedPreset = presetName;
-        this.presetList.getChildren().forEach(entry -> {
-            if (entry instanceof PresetListWidget.Entry presetEntry && presetEntry.presetName.equals(presetName)) {
-                this.presetList.setSelected(presetEntry);
+        for (PresetListWidget.Entry entry : this.presetList.children()) {
+            if (entry.getPresetName().equals(presetName)) {
+                this.presetList.setSelected(entry);
+                break;
             }
-        });
+        }
+    }
+
+    public List<Preset> getPresets() {
+        return new ArrayList<>(PresetManager.getInstance().getPresets());
     }
 
     public void handleResourceList(String type, List<String> resources) {
@@ -82,7 +111,7 @@ public class PresetManagerScreen extends Screen {
             }
             this.presetList.refreshEntries();
         } else {
-            this.minecraft.setScreen(new ErrorScreen(Component.literal("Error"), Component.literal("Invalid resources. Please check the model, texture, and animation files.")));
+            this.minecraft.setScreen(new net.minecraft.client.gui.screens.GenericDirtMessageScreen(Component.literal("Invalid resources. Please check the model, texture, and animation files.")));
         }
     }
 

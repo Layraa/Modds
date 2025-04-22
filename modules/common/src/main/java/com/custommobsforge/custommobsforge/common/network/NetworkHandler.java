@@ -72,6 +72,12 @@ public class NetworkHandler {
                 .consumerMainThread(PresetDeletePacket::handle)
                 .add();
 
+        CHANNEL.messageBuilder(PresetDeleteSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
+                .decoder(PresetDeleteSyncPacket::new)
+                .encoder(PresetDeleteSyncPacket::write)
+                .consumerMainThread(PresetDeleteSyncPacket::handle)
+                .add();
+
         CHANNEL.messageBuilder(ResourceListRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .decoder(ResourceListRequestPacket::new)
                 .encoder(ResourceListRequestPacket::write)
@@ -131,7 +137,7 @@ public class NetworkHandler {
                     if (player != null) {
                         for (var preset : PresetManager.getInstance().getPresets()) {
                             NetworkHandler.sendToPlayer(new PresetSyncPacket(
-                                    preset.name(),
+                                    preset.getName(),
                                     preset.health(),
                                     preset.speed(),
                                     preset.modelName(),
@@ -206,6 +212,7 @@ public class NetworkHandler {
                     ServerPlayer player = context.get().getSender();
                     if (player != null) {
                         PresetManager.getInstance().removePreset(packet.getName());
+                        NetworkHandler.sendToPlayer(new PresetDeleteSyncPacket(packet.getName()), player);
                     }
                     context.get().setPacketHandled(true);
                 })
@@ -249,7 +256,7 @@ public class NetworkHandler {
 
         CHANNEL.messageBuilder(ValidateResourcesPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .decoder(ValidateResourcesPacket::new)
-                .encoder(ValidateResourcesPacket::write)
+                .encoderMorgan(ValidateResourcesPacket::write)
                 .consumerMainThread((packet, context) -> {
                     ServerPlayer player = context.get().getSender();
                     if (player != null) {
@@ -288,7 +295,7 @@ public class NetworkHandler {
     }
 
     public static void sendToPlayer(Object packet, ServerPlayer player) {
-        CHANNEL.sendTo(packet, player.connection, NetworkDirection.PLAY_TO_CLIENT);
+        CHANNEL.sendTo(packet, player.connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT);
     }
 
     public static void sendToServer(Object packet) {
