@@ -45,7 +45,6 @@ public class NetworkHandler {
                         var preset = PresetManager.getInstance().getPreset(packet.getPresetName());
                         if (preset != null) {
                             CustomMob mob = new CustomMob(ModEntities.CUSTOM_MOB.get(), level);
-                            mob.setPresetName(packet.getPresetName());
                             mob.setModelName(preset.modelName());
                             mob.setTextureName(preset.textureName());
                             mob.setAnimationName(preset.animationName());
@@ -96,26 +95,9 @@ public class NetworkHandler {
                 .consumerMainThread((packet, context) -> {
                     ServerPlayer player = context.get().getSender();
                     if (player != null) {
-                        PresetManager.getInstance().addPreset(
-                                packet.getName(),
-                                packet.getHealth(),
-                                packet.getSpeed(),
-                                packet.getSizeWidth(),
-                                packet.getSizeHeight(),
-                                packet.getModelName(),
-                                packet.getTextureName(),
-                                packet.getAnimationName()
-                        );
-                        NetworkHandler.sendToPlayer(new PresetSyncPacket(
-                                packet.getName(),
-                                packet.getHealth(),
-                                packet.getSpeed(),
-                                packet.getSizeWidth(),
-                                packet.getSizeHeight(),
-                                packet.getModelName(),
-                                packet.getTextureName(),
-                                packet.getAnimationName()
-                        ), player);
+                        handlePresetUpdate(packet.getName(), packet.getHealth(), packet.getSpeed(),
+                                packet.getSizeWidth(), packet.getSizeHeight(), packet.getModelName(),
+                                packet.getTextureName(), packet.getAnimationName(), false, player);
                     }
                     context.get().setPacketHandled(true);
                 })
@@ -127,27 +109,9 @@ public class NetworkHandler {
                 .consumerMainThread((packet, context) -> {
                     ServerPlayer player = context.get().getSender();
                     if (player != null) {
-                        PresetManager.getInstance().removePreset(packet.getName());
-                        PresetManager.getInstance().addPreset(
-                                packet.getName(),
-                                packet.getHealth(),
-                                packet.getSpeed(),
-                                packet.getSizeWidth(),
-                                packet.getSizeHeight(),
-                                packet.getModelName(),
-                                packet.getTextureName(),
-                                packet.getAnimationName()
-                        );
-                        NetworkHandler.sendToPlayer(new PresetSyncPacket(
-                                packet.getName(),
-                                packet.getHealth(),
-                                packet.getSpeed(),
-                                packet.getSizeWidth(),
-                                packet.getSizeHeight(),
-                                packet.getModelName(),
-                                packet.getTextureName(),
-                                packet.getAnimationName()
-                        ), player);
+                        handlePresetUpdate(packet.getName(), packet.getHealth(), packet.getSpeed(),
+                                packet.getSizeWidth(), packet.getSizeHeight(), packet.getModelName(),
+                                packet.getTextureName(), packet.getAnimationName(), true, player);
                     }
                     context.get().setPacketHandled(true);
                 })
@@ -188,7 +152,6 @@ public class NetworkHandler {
 
                         List<String> resources;
                         try {
-                            // Список файлов из ресурсов мода
                             resources = getResourceList(pathPrefix);
                         } catch (IOException e) {
                             LOGGER.error("Failed to list resources for type {}: {}", type, e.getMessage());
@@ -219,15 +182,15 @@ public class NetworkHandler {
                         String texturePath = "textures/" + packet.getTexture() + ".png";
                         String animationPath = "animations/" + packet.getAnimation() + ".json";
 
-                        if (!resourceExists(modelPath)) {
+                        if (resourceMissing(modelPath)) {
                             LOGGER.warn("Model file does not exist in mod resources: {}", modelPath);
                             valid = false;
                         }
-                        if (!resourceExists(texturePath)) {
+                        if (resourceMissing(texturePath)) {
                             LOGGER.warn("Texture file does not exist in mod resources: {}", texturePath);
                             valid = false;
                         }
-                        if (!resourceExists(animationPath)) {
+                        if (resourceMissing(animationPath)) {
                             LOGGER.warn("Animation file does not exist in mod resources: {}", animationPath);
                             valid = false;
                         }
@@ -262,22 +225,46 @@ public class NetworkHandler {
             if (stream == null) {
                 return resources;
             }
-            // Здесь мы не можем перечислить файлы в JAR напрямую, поэтому полагаемся на заранее известные имена
-            // В реальном проекте можно использовать modid для загрузки ресурсов через ResourceManager
-            // Для простоты предполагаем, что ресурсы известны (например, test_model, test_texture, test_animation)
             resources.add("test_" + pathPrefix.substring(0, pathPrefix.length() - 1));
         }
         return resources;
     }
 
-    private static boolean resourceExists(String path) {
-        ResourceLocation location = new ResourceLocation("custommobsforge", path);
+    private static boolean resourceMissing(String path) {
         try (InputStream inputStream = NetworkHandler.class.getResourceAsStream("/assets/custommobsforge/" + path)) {
-            return inputStream != null;
+            return inputStream == null;
         } catch (IOException e) {
             LOGGER.error("Failed to check resource {}: {}", path, e.getMessage());
-            return false;
+            return true;
         }
+    }
+
+    private static void handlePresetUpdate(String name, float health, double speed, float sizeWidth, float sizeHeight,
+                                           String modelName, String textureName, String animationName,
+                                           boolean isEdit, ServerPlayer player) {
+        if (isEdit) {
+            PresetManager.getInstance().removePreset(name);
+        }
+        PresetManager.getInstance().addPreset(
+                name,
+                health,
+                speed,
+                sizeWidth,
+                sizeHeight,
+                modelName,
+                textureName,
+                animationName
+        );
+        NetworkHandler.sendToPlayer(new PresetSyncPacket(
+                name,
+                health,
+                speed,
+                sizeWidth,
+                sizeHeight,
+                modelName,
+                textureName,
+                animationName
+        ), player);
     }
 
     public static void sendToPlayer(Object packet, ServerPlayer player) {
