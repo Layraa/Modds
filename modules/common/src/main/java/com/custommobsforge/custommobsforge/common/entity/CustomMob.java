@@ -9,8 +9,11 @@ import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.core.animation.AnimatableManager;
 import software.bernie.geckolib.util.GeckoLibUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class CustomMob extends Mob implements GeoEntity {
+    private static final Logger LOGGER = LogManager.getLogger(CustomMob.class);
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private String presetName;
     private String modelName;

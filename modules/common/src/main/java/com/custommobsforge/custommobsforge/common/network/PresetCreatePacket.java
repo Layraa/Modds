@@ -1,8 +1,6 @@
 package com.custommobsforge.custommobsforge.common.network;
 
-import com.custommobsforge.custommobsforge.common.PresetManager;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -42,20 +40,31 @@ public class PresetCreatePacket {
         buf.writeUtf(animationName);
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public float getHealth() {
+        return health;
+    }
+
+    public double getSpeed() {
+        return speed;
+    }
+
+    public String getModelName() {
+        return modelName;
+    }
+
+    public String getTextureName() {
+        return textureName;
+    }
+
+    public String getAnimationName() {
+        return animationName;
+    }
+
     public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> {
-            PresetManager.getInstance().addPreset(name, health, speed, modelName, textureName, animationName);
-            // Синхронизация с клиентами
-            ServerPlayer sender = context.get().getSender();
-            if (sender != null) {
-                sender.getServer().getPlayerList().getPlayers().forEach(player -> {
-                    NetworkHandler.sendToPlayer(
-                            new PresetSyncPacket(name, health, speed, modelName, textureName, animationName),
-                            player
-                    );
-                });
-            }
-        });
         context.get().setPacketHandled(true);
     }
 }

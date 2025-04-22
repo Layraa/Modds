@@ -84,8 +84,7 @@ public class ClientCustomMobsForge {
         Minecraft.getInstance().execute(() -> {
             Screen screen = Minecraft.getInstance().screen;
             if (screen instanceof PresetEditorScreen || screen instanceof PresetManagerScreen) {
-                // Убрали вызов setSuggestions, так как он не поддерживается
-                // Если нужно автодополнение, можно добавить позже
+                // Убрали setSuggestions, так как он не поддерживается
             }
         });
     }

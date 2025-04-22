@@ -1,102 +1,243 @@
 package com.custommobsforge.custommobsforge.common.network;
 
+import com.custommobsforge.custommobsforge.common.ModEntities;
+import com.custommobsforge.custommobsforge.common.PresetManager;
+import com.custommobsforge.custommobsforge.common.entity.CustomMob;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class NetworkHandler {
     private static final Logger LOGGER = LogManager.getLogger();
-
     private static final String PROTOCOL_VERSION = "1";
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-            ResourceLocation.fromNamespaceAndPath("custommobsforge", "main"),
+    private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
+            new ResourceLocation("custommobsforge", "main"),
             () -> PROTOCOL_VERSION,
             PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals
     );
+    private static int packetId = 0;
 
     public static void register() {
-        LOGGER.info("Registering network packets for CustomMobsForge");
-        int id = 0;
-        INSTANCE.messageBuilder(PresetCreatePacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(PresetCreatePacket::new)
-                .encoder(PresetCreatePacket::write)
-                .consumerMainThread(PresetCreatePacket::handle)
-                .add();
-        INSTANCE.messageBuilder(PresetEditPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(PresetEditPacket::new)
-                .encoder(PresetEditPacket::write)
-                .consumerMainThread(PresetEditPacket::handle)
-                .add();
-        INSTANCE.messageBuilder(PresetDeletePacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(PresetDeletePacket::new)
-                .encoder(PresetDeletePacket::write)
-                .consumerMainThread(PresetDeletePacket::handle)
-                .add();
-        INSTANCE.messageBuilder(SpawnMobPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(SpawnMobPacket::new)
-                .encoder(SpawnMobPacket::write)
-                .consumerMainThread(SpawnMobPacket::handle)
-                .add();
-        INSTANCE.messageBuilder(PresetSyncPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(PresetSyncPacket::new)
-                .encoder(PresetSyncPacket::write)
-                .consumerMainThread(PresetSyncPacket::handle)
-                .add();
-        INSTANCE.messageBuilder(ServerCheckPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(ServerCheckPacket::new)
-                .encoder(ServerCheckPacket::write)
-                .consumerMainThread(ServerCheckPacket::handle)
-                .add();
-        INSTANCE.messageBuilder(RequestPresetsPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(RequestPresetsPacket::new)
-                .encoder(RequestPresetsPacket::write)
-                .consumerMainThread(RequestPresetsPacket::handle)
-                .add();
-        INSTANCE.messageBuilder(ServerCheckResponsePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(ServerCheckResponsePacket::new)
-                .encoder(ServerCheckResponsePacket::write)
-                .consumerMainThread(ServerCheckResponsePacket::handle)
-                .add();
-        INSTANCE.messageBuilder(OpenGuiPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(OpenGuiPacket::new)
-                .encoder(OpenGuiPacket::write)
-                .consumerMainThread(OpenGuiPacket::handle)
-                .add();
-        INSTANCE.messageBuilder(ValidateResourcesPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(ValidateResourcesPacket::new)
-                .encoder(ValidateResourcesPacket::write)
-                .consumerMainThread(ValidateResourcesPacket::handle)
-                .add();
-        INSTANCE.messageBuilder(ResourceListRequestPacket.class, id++, NetworkDirection.PLAY_TO_SERVER)
-                .decoder(ResourceListRequestPacket::new)
-                .encoder(ResourceListRequestPacket::write)
-                .consumerMainThread(ResourceListRequestPacket::handle)
-                .add();
-        INSTANCE.messageBuilder(ResourceListResponsePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(ResourceListResponsePacket::new)
-                .encoder(ResourceListResponsePacket::write)
-                .consumerMainThread(ResourceListResponsePacket::handle)
-                .add();
-        INSTANCE.messageBuilder(ResourceValidationResponsePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
-                .decoder(ResourceValidationResponsePacket::new)
-                .encoder(ResourceValidationResponsePacket::write)
-                .consumerMainThread(ResourceValidationResponsePacket::handle)
-                .add();
-        LOGGER.info("Finished registering {} network packets", id);
+        CHANNEL.registerMessage(packetId++, OpenGuiPacket.class, OpenGuiPacket::write, OpenGuiPacket::new, OpenGuiPacket::handle, NetworkDirection.PLAY_TO_CLIENT);
+        CHANNEL.registerMessage(packetId++, SpawnMobPacket.class, SpawnMobPacket::write, SpawnMobPacket::new, SpawnMobPacket::handle, NetworkDirection.PLAY_TO_SERVER);
+        CHANNEL.registerMessage(packetId++, RequestPresetsPacket.class, RequestPresetsPacket::write, RequestPresetsPacket::new, RequestPresetsPacket::handle, NetworkDirection.PLAY_TO_SERVER);
+        CHANNEL.registerMessage(packetId++, PresetSyncPacket.class, PresetSyncPacket::write, PresetSyncPacket::new, PresetSyncPacket::handle, NetworkDirection.PLAY_TO_CLIENT);
+        CHANNEL.registerMessage(packetId++, PresetCreatePacket.class, PresetCreatePacket::write, PresetCreatePacket::new, PresetCreatePacket::handle, NetworkDirection.PLAY_TO_SERVER);
+        CHANNEL.registerMessage(packetId++, PresetEditPacket.class, PresetEditPacket::write, PresetEditPacket::new, PresetEditPacket::handle, NetworkDirection.PLAY_TO_SERVER);
+        CHANNEL.registerMessage(packetId++, PresetDeletePacket.class, PresetDeletePacket::write, PresetDeletePacket::new, PresetDeletePacket::handle, NetworkDirection.PLAY_TO_SERVER);
+        CHANNEL.registerMessage(packetId++, ResourceListRequestPacket.class, ResourceListRequestPacket::write, ResourceListRequestPacket::new, ResourceListRequestPacket::handle, NetworkDirection.PLAY_TO_SERVER);
+        CHANNEL.registerMessage(packetId++, ResourceListResponsePacket.class, ResourceListResponsePacket::write, ResourceListResponsePacket::new, ResourceListResponsePacket::handle, NetworkDirection.PLAY_TO_CLIENT);
+        CHANNEL.registerMessage(packetId++, ValidateResourcesPacket.class, ValidateResourcesPacket::write, ValidateResourcesPacket::new, ValidateResourcesPacket::handle, NetworkDirection.PLAY_TO_SERVER);
+        CHANNEL.registerMessage(packetId++, ResourceValidationResponsePacket.class, ResourceValidationResponsePacket::write, ResourceValidationResponsePacket::new, ResourceValidationResponsePacket::handle, NetworkDirection.PLAY_TO_CLIENT);
     }
 
-    public static void sendToServer(Object packet) {
-        INSTANCE.sendToServer(packet);
+    public static void registerServerHandlers() {
+        CHANNEL.messageBuilder(SpawnMobPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(SpawnMobPacket::new)
+                .encoder(SpawnMobPacket::write)
+                .consumerMainThread((packet, context) -> {
+                    ServerPlayer player = context.get().getSender();
+                    if (player != null) {
+                        Level level = player.level();
+                        var preset = PresetManager.getInstance().getPreset(packet.getPresetName());
+                        if (preset != null) {
+                            CustomMob mob = new CustomMob(ModEntities.CUSTOM_MOB.get(), level);
+                            mob.setPresetName(packet.getPresetName());
+                            mob.setModelName(preset.modelName());
+                            mob.setTextureName(preset.textureName());
+                            mob.setAnimationName(preset.animationName());
+                            mob.setHealthValue(preset.health());
+                            mob.setSpeedValue(preset.speed());
+                            mob.setPos(player.getX(), player.getY(), player.getZ());
+                            mob.refreshDimensions();
+                            level.addFreshEntity(mob);
+                        }
+                    }
+                    context.get().setPacketHandled(true);
+                })
+                .add();
+
+        CHANNEL.messageBuilder(RequestPresetsPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(RequestPresetsPacket::new)
+                .encoder(RequestPresetsPacket::write)
+                .consumerMainThread((packet, context) -> {
+                    ServerPlayer player = context.get().getSender();
+                    if (player != null) {
+                        for (var preset : PresetManager.getInstance().getPresets()) {
+                            NetworkHandler.sendToPlayer(new PresetSyncPacket(
+                                    preset.name(),
+                                    preset.health(),
+                                    preset.speed(),
+                                    preset.modelName(),
+                                    preset.textureName(),
+                                    preset.animationName()
+                            ), player);
+                        }
+                    }
+                    context.get().setPacketHandled(true);
+                })
+                .add();
+
+        CHANNEL.messageBuilder(PresetCreatePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(PresetCreatePacket::new)
+                .encoder(PresetCreatePacket::write)
+                .consumerMainThread((packet, context) -> {
+                    ServerPlayer player = context.get().getSender();
+                    if (player != null) {
+                        PresetManager.getInstance().addPreset(
+                                packet.getName(),
+                                packet.getHealth(),
+                                packet.getSpeed(),
+                                packet.getModelName(),
+                                packet.getTextureName(),
+                                packet.getAnimationName()
+                        );
+                        NetworkHandler.sendToPlayer(new PresetSyncPacket(
+                                packet.getName(),
+                                packet.getHealth(),
+                                packet.getSpeed(),
+                                packet.getModelName(),
+                                packet.getTextureName(),
+                                packet.getAnimationName()
+                        ), player);
+                    }
+                    context.get().setPacketHandled(true);
+                })
+                .add();
+
+        CHANNEL.messageBuilder(PresetEditPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(PresetEditPacket::new)
+                .encoder(PresetEditPacket::write)
+                .consumerMainThread((packet, context) -> {
+                    ServerPlayer player = context.get().getSender();
+                    if (player != null) {
+                        PresetManager.getInstance().removePreset(packet.getName());
+                        PresetManager.getInstance().addPreset(
+                                packet.getName(),
+                                packet.getHealth(),
+                                packet.getSpeed(),
+                                packet.getModelName(),
+                                packet.getTextureName(),
+                                packet.getAnimationName()
+                        );
+                        NetworkHandler.sendToPlayer(new PresetSyncPacket(
+                                packet.getName(),
+                                packet.getHealth(),
+                                packet.getSpeed(),
+                                packet.getModelName(),
+                                packet.getTextureName(),
+                                packet.getAnimationName()
+                        ), player);
+                    }
+                    context.get().setPacketHandled(true);
+                })
+                .add();
+
+        CHANNEL.messageBuilder(PresetDeletePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(PresetDeletePacket::new)
+                .encoder(PresetDeletePacket::write)
+                .consumerMainThread((packet, context) -> {
+                    ServerPlayer player = context.get().getSender();
+                    if (player != null) {
+                        PresetManager.getInstance().removePreset(packet.getName());
+                    }
+                    context.get().setPacketHandled(true);
+                })
+                .add();
+
+        CHANNEL.messageBuilder(ResourceListRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(ResourceListRequestPacket::new)
+                .encoder(ResourceListRequestPacket::write)
+                .consumerMainThread((packet, context) -> {
+                    ServerPlayer player = context.get().getSender();
+                    if (player != null) {
+                        String type = packet.getType();
+                        Path dir = switch (type) {
+                            case "model" -> Path.of("config/custommobsforge/models");
+                            case "texture" -> Path.of("config/custommobsforge/textures");
+                            case "animation" -> Path.of("config/custommobsforge/animations");
+                            default -> throw new IllegalArgumentException("Unknown resource type: " + type);
+                        };
+
+                        List<String> resources;
+                        try {
+                            Files.createDirectories(dir);
+                            try (var stream = Files.walk(dir)) {
+                                resources = stream
+                                        .filter(Files::isRegularFile)
+                                        .map(Path::getFileName)
+                                        .map(Path::toString)
+                                        .map(name -> name.substring(0, name.lastIndexOf('.')))
+                                        .collect(Collectors.toList());
+                            }
+                        } catch (IOException e) {
+                            LOGGER.error("Failed to list resources for type {}: {}", type, e.getMessage());
+                            resources = List.of();
+                        }
+
+                        NetworkHandler.sendToPlayer(new ResourceListResponsePacket(type, resources), player);
+                    }
+                    context.get().setPacketHandled(true);
+                })
+                .add();
+
+        CHANNEL.messageBuilder(ValidateResourcesPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
+                .decoder(ValidateResourcesPacket::new)
+                .encoder(ValidateResourcesPacket::write)
+                .consumerMainThread((packet, context) -> {
+                    ServerPlayer player = context.get().getSender();
+                    if (player != null) {
+                        boolean valid = true;
+                        String modelPath = "config/custommobsforge/models/" + packet.getModel() + ".json";
+                        String texturePath = "config/custommobsforge/textures/" + packet.getTexture() + ".png";
+                        String animationPath = "config/custommobsforge/animations/" + packet.getAnimation() + ".json";
+
+                        if (!Files.exists(Path.of(modelPath))) {
+                            LOGGER.warn("Model file does not exist: {}", modelPath);
+                            valid = false;
+                        }
+                        if (!Files.exists(Path.of(texturePath))) {
+                            LOGGER.warn("Texture file does not exist: {}", texturePath);
+                            valid = false;
+                        }
+                        if (!Files.exists(Path.of(animationPath))) {
+                            LOGGER.warn("Animation file does not exist: {}", animationPath);
+                            valid = false;
+                        }
+
+                        NetworkHandler.sendToPlayer(new ResourceValidationResponsePacket(
+                                valid,
+                                packet.isCreateMode(),
+                                packet.getName(),
+                                packet.getHealth(),
+                                packet.getSpeed(),
+                                packet.getModel(),
+                                packet.getTexture(),
+                                packet.getAnimation()
+                        ), player);
+                    }
+                    context.get().setPacketHandled(true);
+                })
+                .add();
     }
 
     public static void sendToPlayer(Object packet, ServerPlayer player) {
-        if (player != null) {
-            INSTANCE.sendTo(packet, player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
-        }
+        CHANNEL.sendTo(packet, player.connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT);
+    }
+
+    public static void sendToServer(Object packet) {
+        CHANNEL.sendToServer(packet);
     }
 }

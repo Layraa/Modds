@@ -1,11 +1,6 @@
 package com.custommobsforge.custommobsforge.common.network;
 
-import com.custommobsforge.custommobsforge.common.ModEntities;
-import com.custommobsforge.custommobsforge.common.PresetManager;
-import com.custommobsforge.custommobsforge.common.entity.CustomMob;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -25,25 +20,11 @@ public class SpawnMobPacket {
         buf.writeUtf(presetName);
     }
 
+    public String getPresetName() {
+        return presetName;
+    }
+
     public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> {
-            ServerPlayer player = context.get().getSender();
-            if (player != null) {
-                Level level = player.level();
-                var preset = PresetManager.getInstance().getPreset(presetName);
-                if (preset != null) {
-                    CustomMob mob = new CustomMob(ModEntities.CUSTOM_MOB.get(), level);
-                    mob.setModelName(preset.modelName());
-                    mob.setTextureName(preset.textureName());
-                    mob.setAnimationName(preset.animationName());
-                    mob.setHealthValue(preset.health());
-                    mob.setSpeedValue(preset.speed());
-                    mob.setPos(player.getX(), player.getY(), player.getZ());
-                    mob.refreshDimensions();
-                    level.addFreshEntity(mob);
-                }
-            }
-        });
         context.get().setPacketHandled(true);
     }
 }
