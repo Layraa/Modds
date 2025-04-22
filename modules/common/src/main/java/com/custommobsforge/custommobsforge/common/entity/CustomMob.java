@@ -15,7 +15,7 @@ public class CustomMob extends Mob implements GeoEntity {
     private String textureName;
     private String animationName;
 
-    protected CustomMob(EntityType<? extends Mob> entityType, Level level) {
+    public CustomMob(EntityType<? extends Mob> entityType, Level level) {
         super(entityType, level);
     }
 

@@ -1,7 +1,6 @@
 package com.custommobsforge.custommobsforge.common.network;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.ArrayList;
@@ -9,43 +8,33 @@ import java.util.List;
 import java.util.function.Supplier;
 
 public class ResourceListResponsePacket {
-    private final String resourceType;
+    private final String type;
     private final List<String> resources;
 
-    public ResourceListResponsePacket(String resourceType, List<String> resources) {
-        this.resourceType = resourceType;
-        this.resources = resources;
+    public ResourceListResponsePacket(String type, List<String> resources) {
+        this.type = type;
+        this.resources = new ArrayList<>(resources);
     }
 
     public ResourceListResponsePacket(FriendlyByteBuf buf) {
-        this.resourceType = buf.readUtf();
-        int size = buf.readInt();
-        this.resources = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            resources.add(buf.readUtf());
-        }
+        this.type = buf.readUtf();
+        this.resources = buf.readList(FriendlyByteBuf::readUtf);
     }
 
     public void write(FriendlyByteBuf buf) {
-        buf.writeUtf(resourceType);
-        buf.writeInt(resources.size());
-        for (String resource : resources) {
-            buf.writeUtf(resource);
-        }
+        buf.writeUtf(type);
+        buf.writeCollection(resources, FriendlyByteBuf::writeUtf);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> {
-            MinecraftForge.EVENT_BUS.post(new ResourceListResponseEvent(this));
-        });
-        context.get().setPacketHandled(true);
-    }
-
-    public String getResourceType() {
-        return resourceType;
+    public String getType() {
+        return type;
     }
 
     public List<String> getResources() {
         return resources;
+    }
+
+    public void handle(Supplier<NetworkEvent.Context> context) {
+        // Логика обработки перенесена в ClientPacketHandler
     }
 }

@@ -1,7 +1,6 @@
 package com.custommobsforge.custommobsforge.common.network;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
@@ -41,13 +40,6 @@ public class PresetSyncPacket {
         buf.writeUtf(animationName);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> {
-            MinecraftForge.EVENT_BUS.post(new PresetSyncEvent(this));
-        });
-        context.get().setPacketHandled(true);
-    }
-
     public String getName() {
         return name;
     }
@@ -70,5 +62,9 @@ public class PresetSyncPacket {
 
     public String getAnimationName() {
         return animationName;
+    }
+
+    public void handle(Supplier<NetworkEvent.Context> context) {
+        // Логика обработки перенесена в ClientPacketHandler
     }
 }

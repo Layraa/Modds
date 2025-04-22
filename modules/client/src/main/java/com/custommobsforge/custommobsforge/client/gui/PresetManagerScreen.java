@@ -1,5 +1,6 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
+import com.custommobsforge.custommobsforge.client.ClientNetworkHandler; // Новый импорт
 import com.custommobsforge.custommobsforge.common.Preset;
 import com.custommobsforge.custommobsforge.common.PresetManager;
 import com.custommobsforge.custommobsforge.common.network.*;
@@ -8,15 +9,14 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
 
+@ParametersAreNonnullByDefault
 public class PresetManagerScreen extends Screen {
     private PresetListWidget presetList;
     private String selectedPreset;
-    private List<String> models = new ArrayList<>();
-    private List<String> textures = new ArrayList<>();
-    private List<String> animations = new ArrayList<>();
     private Button editButton;
     private Button deleteButton;
 
@@ -35,15 +35,15 @@ public class PresetManagerScreen extends Screen {
 
         this.addRenderableWidget(Button.builder(Component.literal("Spawn Mob"), button -> {
             if (selectedPreset != null) {
-                NetworkHandler.sendToServer(new SpawnMobPacket(selectedPreset));
+                ClientNetworkHandler.sendToServer(new SpawnMobPacket(selectedPreset)); // Обновлено
                 this.minecraft.setScreen(null);
             }
         }).pos(this.width - 110, buttonY).size(100, 20).build());
 
-        NetworkHandler.sendToServer(new RequestPresetsPacket());
-        NetworkHandler.sendToServer(new ResourceListRequestPacket("model"));
-        NetworkHandler.sendToServer(new ResourceListRequestPacket("texture"));
-        NetworkHandler.sendToServer(new ResourceListRequestPacket("animation"));
+        ClientNetworkHandler.sendToServer(new RequestPresetsPacket()); // Обновлено
+        ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("model")); // Обновлено
+        ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("texture")); // Обновлено
+        ClientNetworkHandler.sendToServer(new ResourceListRequestPacket("animation")); // Обновлено
     }
 
     @Override
@@ -64,7 +64,7 @@ public class PresetManagerScreen extends Screen {
             }
             if (deleteButton == null) {
                 deleteButton = Button.builder(Component.literal("Delete"), button -> {
-                    NetworkHandler.sendToServer(new PresetDeletePacket(selectedPreset));
+                    ClientNetworkHandler.sendToServer(new PresetDeletePacket(selectedPreset)); // Обновлено
                     this.presetList.refreshEntries();
                 }).pos(buttonX + 65, buttonY).size(60, 20).build();
                 this.addRenderableWidget(deleteButton);
@@ -95,20 +95,21 @@ public class PresetManagerScreen extends Screen {
         return new ArrayList<>(PresetManager.getInstance().getPresets());
     }
 
+    public PresetListWidget getPresetList() {
+        return presetList;
+    }
+
     public void handleResourceList(String type, List<String> resources) {
-        switch (type) {
-            case "model" -> models = resources;
-            case "texture" -> textures = resources;
-            case "animation" -> animations = resources;
-        }
+        // Метод пока пустой, но его вызов теперь будет происходить из ResourceListResponsePacket
+        // В будущем здесь можно реализовать автодополнение для полей ввода
     }
 
     public void handleResourceValidation(boolean valid, boolean createMode, String name, float health, double speed, String model, String texture, String animation) {
         if (valid) {
             if (createMode) {
-                NetworkHandler.sendToServer(new PresetCreatePacket(name, health, speed, model, texture, animation));
+                ClientNetworkHandler.sendToServer(new PresetCreatePacket(name, health, speed, model, texture, animation)); // Обновлено
             } else {
-                NetworkHandler.sendToServer(new PresetEditPacket(name, health, speed, model, texture, animation));
+                ClientNetworkHandler.sendToServer(new PresetEditPacket(name, health, speed, model, texture, animation)); // Обновлено
             }
             this.presetList.refreshEntries();
         } else {

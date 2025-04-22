@@ -1,14 +1,13 @@
 package com.custommobsforge.custommobsforge.common.network;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
 public class ResourceValidationResponsePacket {
     private final boolean valid;
-    private final boolean isCreateMode;
+    private final boolean createMode;
     private final String name;
     private final float health;
     private final double speed;
@@ -16,9 +15,9 @@ public class ResourceValidationResponsePacket {
     private final String texture;
     private final String animation;
 
-    public ResourceValidationResponsePacket(boolean valid, boolean isCreateMode, String name, float health, double speed, String model, String texture, String animation) {
+    public ResourceValidationResponsePacket(boolean valid, boolean createMode, String name, float health, double speed, String model, String texture, String animation) {
         this.valid = valid;
-        this.isCreateMode = isCreateMode;
+        this.createMode = createMode;
         this.name = name;
         this.health = health;
         this.speed = speed;
@@ -29,7 +28,7 @@ public class ResourceValidationResponsePacket {
 
     public ResourceValidationResponsePacket(FriendlyByteBuf buf) {
         this.valid = buf.readBoolean();
-        this.isCreateMode = buf.readBoolean();
+        this.createMode = buf.readBoolean();
         this.name = buf.readUtf();
         this.health = buf.readFloat();
         this.speed = buf.readDouble();
@@ -40,7 +39,7 @@ public class ResourceValidationResponsePacket {
 
     public void write(FriendlyByteBuf buf) {
         buf.writeBoolean(valid);
-        buf.writeBoolean(isCreateMode);
+        buf.writeBoolean(createMode);
         buf.writeUtf(name);
         buf.writeFloat(health);
         buf.writeDouble(speed);
@@ -49,19 +48,12 @@ public class ResourceValidationResponsePacket {
         buf.writeUtf(animation);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> {
-            MinecraftForge.EVENT_BUS.post(new ResourceValidationResponseEvent(this));
-        });
-        context.get().setPacketHandled(true);
-    }
-
     public boolean isValid() {
         return valid;
     }
 
     public boolean isCreateMode() {
-        return isCreateMode;
+        return createMode;
     }
 
     public String getName() {
@@ -86,5 +78,9 @@ public class ResourceValidationResponsePacket {
 
     public String getAnimation() {
         return animation;
+    }
+
+    public void handle(Supplier<NetworkEvent.Context> context) {
+        // Логика обработки перенесена в ClientPacketHandler
     }
 }

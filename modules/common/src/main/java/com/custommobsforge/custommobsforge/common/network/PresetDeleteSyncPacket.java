@@ -1,6 +1,5 @@
 package com.custommobsforge.custommobsforge.common.network;
 
-import com.custommobsforge.custommobsforge.common.PresetManager;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
@@ -21,8 +20,11 @@ public class PresetDeleteSyncPacket {
         buf.writeUtf(name);
     }
 
+    public String getName() {
+        return name;
+    }
+
     public void handle(Supplier<NetworkEvent.Context> context) {
-        context.get().enqueueWork(() -> PresetManager.getInstance().removePreset(name));
-        context.get().setPacketHandled(true);
+        // Логика обработки перенесена в ClientPacketHandler
     }
 }

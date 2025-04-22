@@ -34,7 +34,7 @@ public class NetworkHandler {
         CHANNEL.messageBuilder(OpenGuiPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
                 .decoder(OpenGuiPacket::new)
                 .encoder(OpenGuiPacket::write)
-                .consumerMainThread(OpenGuiPacket::handle)
+                .consumerMainThread((packet, context) -> {}) // Пустой обработчик для сервера
                 .add();
 
         CHANNEL.messageBuilder(SpawnMobPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
@@ -52,7 +52,7 @@ public class NetworkHandler {
         CHANNEL.messageBuilder(PresetSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
                 .decoder(PresetSyncPacket::new)
                 .encoder(PresetSyncPacket::write)
-                .consumerMainThread(PresetSyncPacket::handle)
+                .consumerMainThread((packet, context) -> {})
                 .add();
 
         CHANNEL.messageBuilder(PresetCreatePacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
@@ -76,7 +76,7 @@ public class NetworkHandler {
         CHANNEL.messageBuilder(PresetDeleteSyncPacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
                 .decoder(PresetDeleteSyncPacket::new)
                 .encoder(PresetDeleteSyncPacket::write)
-                .consumerMainThread(PresetDeleteSyncPacket::handle)
+                .consumerMainThread((packet, context) -> {})
                 .add();
 
         CHANNEL.messageBuilder(ResourceListRequestPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
@@ -88,7 +88,7 @@ public class NetworkHandler {
         CHANNEL.messageBuilder(ResourceListResponsePacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
                 .decoder(ResourceListResponsePacket::new)
                 .encoder(ResourceListResponsePacket::write)
-                .consumerMainThread(ResourceListResponsePacket::handle)
+                .consumerMainThread((packet, context) -> {})
                 .add();
 
         CHANNEL.messageBuilder(ValidateResourcesPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
@@ -100,7 +100,7 @@ public class NetworkHandler {
         CHANNEL.messageBuilder(ResourceValidationResponsePacket.class, packetId++, NetworkDirection.PLAY_TO_CLIENT)
                 .decoder(ResourceValidationResponsePacket::new)
                 .encoder(ResourceValidationResponsePacket::write)
-                .consumerMainThread(ResourceValidationResponsePacket::handle)
+                .consumerMainThread((packet, context) -> {})
                 .add();
     }
 
@@ -296,7 +296,7 @@ public class NetworkHandler {
     }
 
     public static void sendToPlayer(Object packet, ServerPlayer player) {
-        CHANNEL.sendTo(packet, player.connection.getConnection(), NetworkDirection.PLAY_TO_CLIENT);
+        CHANNEL.sendTo(packet, player.connection.connection, NetworkDirection.PLAY_TO_CLIENT);
     }
 
     public static void sendToServer(Object packet) {
