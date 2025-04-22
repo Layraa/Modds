@@ -1,5 +1,6 @@
 package com.custommobsforge.custommobsforge.client.gui;
 
+import com.custommobsforge.custommobsforge.common.Preset;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ObjectSelectionList;
@@ -16,7 +17,7 @@ public class PresetListWidget extends ObjectSelectionList<PresetListWidget.Entry
 
     public void refreshEntries() {
         this.clearEntries();
-        for (var preset : screen.getPresets()) {
+        for (Preset preset : screen.getPresets()) {
             this.addEntry(new Entry(preset.getName()));
         }
     }
