@@ -1,15 +1,14 @@
 package com.custommobsforge.custommobsforge.common.preset;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
 
 public class PresetSavePacket {
     private final Preset preset;
+    private final boolean isEdit; // Новый флаг
 
-    public PresetSavePacket(Preset preset) {
+    public PresetSavePacket(Preset preset, boolean isEdit) {
         this.preset = preset;
+        this.isEdit = isEdit;
     }
 
     public static void encode(PresetSavePacket msg, FriendlyByteBuf buf) {
@@ -21,22 +20,30 @@ public class PresetSavePacket {
         buf.writeInt(msg.preset.getHp());
         buf.writeFloat(msg.preset.getSpeed());
         buf.writeFloat(msg.preset.getSize());
+        buf.writeUtf(msg.preset.getCreator() != null ? msg.preset.getCreator() : "");
+        buf.writeBoolean(msg.isEdit); // Сохраняем флаг
     }
 
     public static PresetSavePacket decode(FriendlyByteBuf buf) {
-        return new PresetSavePacket(new Preset(
-                buf.readUtf(),
-                buf.readUtf(),
-                buf.readUtf(),
-                buf.readUtf(),
-                buf.readUtf(),
-                buf.readInt(),
-                buf.readFloat(),
-                buf.readFloat()
-        ));
+        String name = buf.readUtf();
+        String model = buf.readUtf();
+        String animation = buf.readUtf();
+        String texture = buf.readUtf();
+        String behavior = buf.readUtf();
+        int hp = buf.readInt();
+        float speed = buf.readFloat();
+        float size = buf.readFloat();
+        String creator = buf.readUtf();
+        boolean isEdit = buf.readBoolean(); // Читаем флаг
+        Preset preset = new Preset(name, model, animation, texture, behavior, hp, speed, size, creator.isEmpty() ? null : creator);
+        return new PresetSavePacket(preset, isEdit);
     }
 
     public Preset getPreset() {
         return preset;
+    }
+
+    public boolean isEdit() {
+        return isEdit;
     }
 }

@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -43,6 +44,12 @@ public class ServerCustomMobsForge {
     }
 
     @SubscribeEvent
+    public static void onServerStarting(ServerStartingEvent event) {
+        ResourceConfig.init(); // Переносим инициализацию сюда
+        CustomMobsForge.LOGGER.info("ResourceConfig initialized on server start");
+    }
+
+    @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) {
         CustomCommands.register(event.getDispatcher());
     }
@@ -59,7 +66,7 @@ public class ServerCustomMobsForge {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (player != null) {
-                PresetManager.addPreset(msg.getPreset(), player);
+                PresetManager.addPreset(msg.getPreset(), player, msg.isEdit());
             }
         });
         ctx.get().setPacketHandled(true);

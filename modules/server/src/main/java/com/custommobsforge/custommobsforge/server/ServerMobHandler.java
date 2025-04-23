@@ -16,6 +16,11 @@ public class ServerMobHandler {
         mob.setPos(x, y, z);
         mob.setCustomName(net.minecraft.network.chat.Component.literal(preset.getName()));
         mob.setScale(preset.getSize());
-        level.addFreshEntity(mob);
+        boolean added = level.addFreshEntity(mob);
+        if (added) {
+            CustomMobsForge.LOGGER.info("Successfully spawned mob: " + preset.getName() + " at (" + x + ", " + y + ", " + z + ")");
+        } else {
+            CustomMobsForge.LOGGER.error("Failed to spawn mob: " + preset.getName() + " at (" + x + ", " + y + ", " + z + ")");
+        }
     }
 }

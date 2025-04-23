@@ -1,6 +1,11 @@
 package com.custommobsforge.custommobsforge.common;
 
 import com.custommobsforge.custommobsforge.common.entity.CustomMob;
+import com.custommobsforge.custommobsforge.common.preset.PresetDeletePacket;
+import com.custommobsforge.custommobsforge.common.preset.PresetPacket;
+import com.custommobsforge.custommobsforge.common.preset.PresetSavePacket;
+import com.custommobsforge.custommobsforge.common.preset.RequestPresetsPacket;
+import com.custommobsforge.custommobsforge.common.preset.SpawnMobPacket;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.Level;
@@ -37,7 +42,47 @@ public class CustomMobsForge {
     public CustomMobsForge() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         ENTITIES.register(modEventBus);
+        registerPackets();
         LOGGER.info("CustomMobsForge (Common) initialized");
+    }
+
+    private void registerPackets() {
+        int id = 0;
+        CHANNEL.messageBuilder(PresetSavePacket.class, id++)
+                .encoder(PresetSavePacket::encode)
+                .decoder(PresetSavePacket::decode)
+                .consumerMainThread((msg, ctx) -> {
+                    ctx.get().setPacketHandled(true);
+                })
+                .add();
+        CHANNEL.messageBuilder(PresetDeletePacket.class, id++)
+                .encoder(PresetDeletePacket::encode)
+                .decoder(PresetDeletePacket::decode)
+                .consumerMainThread((msg, ctx) -> {
+                    ctx.get().setPacketHandled(true);
+                })
+                .add();
+        CHANNEL.messageBuilder(SpawnMobPacket.class, id++)
+                .encoder(SpawnMobPacket::encode)
+                .decoder(SpawnMobPacket::decode)
+                .consumerMainThread((msg, ctx) -> {
+                    ctx.get().setPacketHandled(true);
+                })
+                .add();
+        CHANNEL.messageBuilder(PresetPacket.class, id++)
+                .encoder(PresetPacket::encode)
+                .decoder(PresetPacket::decode)
+                .consumerMainThread((msg, ctx) -> {
+                    ctx.get().setPacketHandled(true);
+                })
+                .add();
+        CHANNEL.messageBuilder(RequestPresetsPacket.class, id++)
+                .encoder(RequestPresetsPacket::encode)
+                .decoder(RequestPresetsPacket::decode)
+                .consumerMainThread((msg, ctx) -> {
+                    ctx.get().setPacketHandled(true);
+                })
+                .add();
     }
 
     public static DeferredRegister<EntityType<?>> createEntityRegistry() {

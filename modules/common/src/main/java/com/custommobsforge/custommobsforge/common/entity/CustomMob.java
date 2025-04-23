@@ -32,6 +32,10 @@ public class CustomMob extends PathfinderMob implements GeoAnimatable {
         super(type, level);
         this.preset = preset;
         this.scale = preset.getSize();
+        // Инициализируем атрибуты в конструкторе
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(preset.getHp());
+        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(preset.getSpeed());
+        this.setHealth(this.getMaxHealth());
         this.refreshDimensions();
     }
 
@@ -114,8 +118,6 @@ public class CustomMob extends PathfinderMob implements GeoAnimatable {
     @Override
     public void onAddedToWorld() {
         super.onAddedToWorld();
-        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(preset.getHp());
-        this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(preset.getSpeed());
-        this.setHealth(this.getMaxHealth());
+        // Удаляем установку атрибутов здесь, так как она теперь в конструкторе
     }
 }

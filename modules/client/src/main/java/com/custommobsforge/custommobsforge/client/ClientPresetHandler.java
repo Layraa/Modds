@@ -15,4 +15,12 @@ public class ClientPresetHandler {
     public static List<Preset> getPresets() {
         return new ArrayList<>(presets);
     }
+
+    public static void removePreset(String presetName) {
+        presets.removeIf(preset -> preset.getName().equals(presetName));
+    }
+
+    public static void addPreset(Preset preset) {
+        presets.add(preset);
+    }
 }

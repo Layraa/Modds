@@ -12,17 +12,19 @@ public class CustomMobModel extends GeoModel<CustomMob> {
 
     @Override
     public ResourceLocation getModelResource(CustomMob animatable) {
-        return new ResourceLocation("custommobsforge", "geo/custom_mob.geo.json");
+        String modelPath = animatable.getPreset().getModel();
+        return new ResourceLocation("custommobsforge", "geo/" + modelPath);
     }
 
     @Override
     public ResourceLocation getTextureResource(CustomMob animatable) {
-        return new ResourceLocation("custommobsforge", "textures/entity/custom_mob.png");
+        return new ResourceLocation("custommobsforge", "textures/entity/" + animatable.getPreset().getTexture());
     }
 
     @Override
     public ResourceLocation getAnimationResource(CustomMob animatable) {
-        return new ResourceLocation("custommobsforge", "animations/custom_mob.animation.json");
+        String animationPath = animatable.getPreset().getAnimation();
+        return new ResourceLocation("custommobsforge", "animations/" + animationPath);
     }
 
     @Override
