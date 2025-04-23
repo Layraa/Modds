@@ -1,14 +1,42 @@
 package com.custommobsforge.custommobsforge.common.preset;
 
-public record Preset(String name, float health, double speed, float sizeWidth, float sizeHeight, String modelName, String textureName, String animationName) {
-    public Preset {
-        if (health <= 0) throw new IllegalArgumentException("Health must be positive");
-        if (speed < 0) throw new IllegalArgumentException("Speed must be non-negative");
-        if (sizeWidth <= 0) throw new IllegalArgumentException("Size width must be positive");
-        if (sizeHeight <= 0) throw new IllegalArgumentException("Size height must be positive");
-        if (name == null || name.isEmpty()) throw new IllegalArgumentException("Name must not be empty");
-        if (modelName == null) throw new IllegalArgumentException("Model name must not be null");
-        if (textureName == null) throw new IllegalArgumentException("Texture name must not be null");
-        if (animationName == null) throw new IllegalArgumentException("Animation name must not be null");
+public class Preset {
+    private String name;
+    private String model;
+    private String animation;
+    private String texture;
+    private String behavior;
+    private int hp;
+    private float speed;
+    private float size;
+
+    public Preset(String name, String model, String animation, String texture, String behavior, int hp, float speed, float size) {
+        this.name = name;
+        this.model = model;
+        this.animation = animation;
+        this.texture = texture;
+        this.behavior = behavior;
+        this.hp = hp;
+        this.speed = speed;
+        this.size = size;
     }
+
+    // Геттеры и сеттеры
+    public String getName() { return name; }
+    public String getModel() { return model; }
+    public String getAnimation() { return animation; }
+    public String getTexture() { return texture; }
+    public String getBehavior() { return behavior; }
+    public int getHp() { return hp; }
+    public float getSpeed() { return speed; }
+    public float getSize() { return size; }
+
+    public void setName(String name) { this.name = name; }
+    public void setModel(String model) { this.model = model; }
+    public void setAnimation(String animation) { this.animation = animation; }
+    public void setTexture(String texture) { this.texture = texture; }
+    public void setBehavior(String behavior) { this.behavior = behavior; }
+    public void setHp(int hp) { this.hp = hp; }
+    public void setSpeed(float speed) { this.speed = speed; }
+    public void setSize(float size) { this.size = size; }
 }

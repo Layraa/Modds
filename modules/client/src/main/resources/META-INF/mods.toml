@@ -1,32 +1,16 @@
 modLoader="javafml"
 loaderVersion="[47,)"
-license="ALL Rights Reserved"
-issueTrackerURL="https://example.com/issues"
+license="All Rights Reserved"
 
 [[mods]]
-modId="custommobsforge_client"
+modId="custommobsforge"
 version="1.0.0"
 displayName="Custom Mobs Forge Client"
-description="Client module for Custom Mobs Forge."
-authors="YourName"
+description="Client-side mod for Custom Mobs Forge."
 
-[[dependencies.custommobsforge_client]]
-modId="forge"
+[[dependencies.custommobsforge]]
+modId="custommobsforge_common"
 mandatory=true
-versionRange="[47,)"
+versionRange="[1.0.0,)"
 ordering="NONE"
-side="CLIENT"
-
-[[dependencies.custommobsforge_client]]
-modId="minecraft"
-mandatory=true
-versionRange="[1.20.1]"
-ordering="NONE"
-side="CLIENT"
-
-[[dependencies.custommobsforge_client]]
-modId="geckolib"
-mandatory=true
-versionRange="[4.7.1.2,)"
-ordering="NONE"
-side="CLIENT"
+side="BOTH"

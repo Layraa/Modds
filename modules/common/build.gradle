@@ -25,7 +25,7 @@ tasks.withType(JavaCompile).configureEach {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'com.custommobsforge.custommobsforge.CustomMobsForge'
+        attributes 'Main-Class': 'com.custommobsforge.custommobsforge.common.CustomMobsForge'
     }
 }
 
