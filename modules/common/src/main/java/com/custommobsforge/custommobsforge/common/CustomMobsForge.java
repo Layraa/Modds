@@ -5,10 +5,11 @@ import com.custommobsforge.custommobsforge.common.preset.PresetDeletePacket;
 import com.custommobsforge.custommobsforge.common.preset.PresetPacket;
 import com.custommobsforge.custommobsforge.common.preset.PresetSavePacket;
 import com.custommobsforge.custommobsforge.common.preset.RequestPresetsPacket;
-import com.custommobsforge.custommobsforge.common.preset.SpawnMobPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -26,7 +27,7 @@ public class CustomMobsForge {
     private static final String PROTOCOL_VERSION = "1";
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new net.minecraft.resources.ResourceLocation(MOD_ID, "main"),
+            new ResourceLocation(MOD_ID, "main"),
             () -> PROTOCOL_VERSION,
             PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals
@@ -34,16 +35,24 @@ public class CustomMobsForge {
 
     private static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MOD_ID);
     private static final RegistryObject<EntityType<CustomMob>> CUSTOM_MOB = ENTITIES.register("custom_mob", () ->
-            EntityType.Builder.<CustomMob>of((EntityType<CustomMob> type, Level level) -> new CustomMob(type, level), MobCategory.CREATURE)
+            EntityType.Builder.<CustomMob>of((type, level) -> new CustomMob(type, level), MobCategory.CREATURE)
                     .sized(0.6F, 1.8F)
-                    .build("custom_mob")
+                    .build(new ResourceLocation(MOD_ID, "custom_mob").toString())
     );
 
     public CustomMobsForge() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         ENTITIES.register(modEventBus);
         registerPackets();
-        LOGGER.info("CustomMobsForge (Common) initialized");
+        // Регистрируем обработчик события для создания атрибутов
+        modEventBus.addListener(this::registerEntityAttributes);
+        LOGGER.info("CustomMobsForge (Common) initialized, version: 1.0.1");
+    }
+
+    // Метод для регистрации атрибутов сущности
+    private void registerEntityAttributes(EntityAttributeCreationEvent event) {
+        event.put(CUSTOM_MOB.get(), CustomMob.createAttributes().build());
+        LOGGER.info("Registered attributes for CustomMob");
     }
 
     private void registerPackets() {
@@ -58,13 +67,6 @@ public class CustomMobsForge {
         CHANNEL.messageBuilder(PresetDeletePacket.class, id++)
                 .encoder(PresetDeletePacket::encode)
                 .decoder(PresetDeletePacket::decode)
-                .consumerMainThread((msg, ctx) -> {
-                    ctx.get().setPacketHandled(true);
-                })
-                .add();
-        CHANNEL.messageBuilder(SpawnMobPacket.class, id++)
-                .encoder(SpawnMobPacket::encode)
-                .decoder(SpawnMobPacket::decode)
                 .consumerMainThread((msg, ctx) -> {
                     ctx.get().setPacketHandled(true);
                 })

@@ -168,11 +168,13 @@ public class PresetManager {
     }
 
     public static void spawnMobForPreset(ServerPlayer player, String presetName, Vec3 position) {
+        LOGGER.info("Server received spawn request for preset: " + presetName + " from player: " + player.getName().getString());
         if (player.hasPermissions(2)) {
             Preset preset = presets.stream()
                     .filter(p -> p.getName().equals(presetName))
                     .findFirst()
                     .orElse(null);
+            LOGGER.info("Preset search result: " + (preset != null ? preset.getName() : "not found"));
             if (preset == null) {
                 File presetFile = new File(PRESET_DIR, presetName + ".json");
                 if (presetFile.exists()) {
@@ -196,6 +198,7 @@ public class PresetManager {
                 LOGGER.warn("Player " + player.getName().getString() + " attempted to spawn preset they don't own: " + presetName);
                 return;
             }
+            LOGGER.info("Spawning mob for preset: " + preset.getName() + " at position: (" + position.x + ", " + position.y + ", " + position.z + ")");
             ServerMobHandler.spawnCustomMob(
                     player.serverLevel(),
                     preset,
@@ -203,8 +206,7 @@ public class PresetManager {
                     position.y,
                     position.z
             );
-            player.sendSystemMessage(Component.literal("Spawned mob: " + preset.getName()));
-            LOGGER.info("Player " + player.getName().getString() + " spawned mob from preset: " + presetName);
+            // Убрали сообщение о спавне, так как оно будет в ServerMobHandler
         } else {
             player.sendSystemMessage(Component.literal("You do not have permission to spawn mobs."));
             LOGGER.warn("Player " + player.getName().getString() + " attempted to spawn mob without permission");
@@ -274,12 +276,12 @@ public class PresetManager {
             LOGGER.warn("Validation failed: HP is > 1000");
             return false;
         }
-        if (preset.getSpeed() > 2.0f) {
-            LOGGER.warn("Validation failed: Speed is > 2.0");
+        if (preset.getSpeed() > 9.0f) {
+            LOGGER.warn("Validation failed: Speed is > 9.0");
             return false;
         }
-        if (preset.getSize() > 5.0f) {
-            LOGGER.warn("Validation failed: Size is > 5.0");
+        if (preset.getSize() > 9.0f) {
+            LOGGER.warn("Validation failed: Size is > 9.0");
             return false;
         }
         String behavior = preset.getBehavior().toLowerCase();

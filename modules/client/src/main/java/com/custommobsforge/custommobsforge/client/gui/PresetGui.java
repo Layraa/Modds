@@ -102,9 +102,9 @@ public class PresetGui extends Screen {
         sizeField = new EditBox(this.font, centerX - 100, startY + 250, 200, 20, Component.literal("Size"));
 
         nameField.setHint(Component.literal("Enter mob name"));
-        modelField.setHint(Component.literal("Model name (e.g., custom_mob)"));
-        animationField.setHint(Component.literal("Animation name (e.g., custom_mob)"));
-        textureField.setHint(Component.literal("Texture name (e.g., custom_mob)"));
+        modelField.setHint(Component.literal("Model name"));
+        animationField.setHint(Component.literal("Animation name"));
+        textureField.setHint(Component.literal("Texture name"));
         behaviorField.setHint(Component.literal("Behavior (hostile/passive/neutral)"));
         hpField.setHint(Component.literal("Health points"));
         speedField.setHint(Component.literal("Movement speed"));
@@ -368,7 +368,10 @@ public class PresetGui extends Screen {
         if (this.minecraft != null && this.minecraft.player != null) {
             this.minecraft.player.sendSystemMessage(Component.literal("Requesting to spawn preset: " + preset.getName()));
             Vec3 position = this.minecraft.player.position().add(0, 1, 0);
+            CustomMobsForge.LOGGER.info("Client sending SpawnMobPacket for preset: " + preset.getName() + " at position: (" + position.x + ", " + position.y + ", " + position.z + ")");
             CustomMobsForge.CHANNEL.sendToServer(new SpawnMobPacket(preset.getName(), position));
+        } else {
+            CustomMobsForge.LOGGER.error("Failed to send SpawnMobPacket: Minecraft or player is null");
         }
     }
 
@@ -413,15 +416,7 @@ public class PresetGui extends Screen {
             );
 
             CustomMobsForge.CHANNEL.sendToServer(new PresetSavePacket(preset, isEdit));
-            if (isEdit) {
-                ClientPresetHandler.removePreset(selectedPreset.getName());
-                ClientPresetHandler.addPreset(preset);
-                selectedPreset = preset;
-                this.minecraft.player.sendSystemMessage(Component.literal("Preset updated: " + preset.getName()));
-            } else {
-                ClientPresetHandler.addPreset(preset);
-                this.minecraft.player.sendSystemMessage(Component.literal("Preset created: " + preset.getName()));
-            }
+            this.minecraft.player.sendSystemMessage(Component.literal("Request sent to server to " + (isEdit ? "update" : "create") + " preset: " + preset.getName()));
         } catch (NumberFormatException e) {
             if (this.minecraft != null && this.minecraft.player != null) {
                 this.minecraft.player.sendSystemMessage(Component.literal("Invalid number format for HP, Speed, or Size."));

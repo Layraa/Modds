@@ -20,7 +20,6 @@ public class ResourceConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static ResourceConfig instance;
 
-    // Внутренний класс для представления ресурса
     public static class ResourceEntry {
         public String id;
         public String path;
@@ -52,10 +51,31 @@ public class ResourceConfig {
         }
 
         instance = new ResourceConfig();
+
+        // Пробуем загрузить данные из файла
+        if (CONFIG_FILE.exists()) {
+            try (Reader reader = new FileReader(CONFIG_FILE)) {
+                ResourceConfig loadedConfig = GSON.fromJson(reader, ResourceConfig.class);
+                if (loadedConfig != null) {
+                    instance.models = loadedConfig.models != null ? loadedConfig.models : new ArrayList<>();
+                    instance.animations = loadedConfig.animations != null ? loadedConfig.animations : new ArrayList<>();
+                    instance.textures = loadedConfig.textures != null ? loadedConfig.textures : new ArrayList<>();
+                    LOGGER.info("Loaded resources from config file: {}", CONFIG_FILE.getPath());
+                    LOGGER.info("Loaded {} models: {}", instance.models.size(), instance.models);
+                    LOGGER.info("Loaded {} animations: {}", instance.animations.size(), instance.animations);
+                    LOGGER.info("Loaded {} textures: {}", instance.textures.size(), instance.textures);
+                    return; // Если файл успешно загружен, пропускаем сканирование
+                }
+            } catch (IOException e) {
+                LOGGER.error("Failed to load resources config from file: {}", CONFIG_FILE.getPath(), e);
+            }
+        }
+
+        // Если файла нет или загрузка не удалась, сканируем ресурсы
         scanResourceFolders();
         saveConfig();
 
-        LOGGER.info("Loaded resources config: {}", CONFIG_FILE.getPath());
+        LOGGER.info("Initialized resources config: {}", CONFIG_FILE.getPath());
     }
 
     private static void scanResourceFolders() {
@@ -64,12 +84,10 @@ public class ResourceConfig {
             return;
         }
 
-        // Пробуем сначала через ResourceManager
         ResourceManager resourceManager = ServerLifecycleHooks.getCurrentServer().getResourceManager();
         LOGGER.info("ResourceManager: {}", resourceManager.getClass().getSimpleName());
         LOGGER.info("Available namespaces: {}", resourceManager.getNamespaces());
 
-        // Сканируем модели (geo/)
         instance.models = scanResources(resourceManager, "geo", ".geo.json");
         if (instance.models.isEmpty()) {
             LOGGER.warn("ResourceManager failed to find models, attempting manual scan...");
@@ -77,7 +95,6 @@ public class ResourceConfig {
         }
         LOGGER.info("Found {} models: {}", instance.models.size(), instance.models);
 
-        // Сканируем анимации (animations/)
         instance.animations = scanResources(resourceManager, "animations", ".animation.json");
         if (instance.animations.isEmpty()) {
             LOGGER.warn("ResourceManager failed to find animations, attempting manual scan...");
@@ -85,7 +102,6 @@ public class ResourceConfig {
         }
         LOGGER.info("Found {} animations: {}", instance.animations.size(), instance.animations);
 
-        // Сканируем текстуры (textures/entity/)
         instance.textures = scanResources(resourceManager, "textures/entity", ".png");
         if (instance.textures.isEmpty()) {
             LOGGER.warn("ResourceManager failed to find textures, attempting manual scan...");
@@ -99,7 +115,6 @@ public class ResourceConfig {
         try {
             LOGGER.info("Scanning path with ResourceManager: assets/custommobsforge/{}", path);
 
-            // Логируем все ресурсы в namespace custommobsforge для отладки
             resourceManager.listResources("", fileName -> {
                 if (fileName.getNamespace().equals("custommobsforge")) {
                     LOGGER.debug("Found resource in custommobsforge namespace: {}", fileName);
@@ -109,7 +124,6 @@ public class ResourceConfig {
                 LOGGER.debug("Resource: {}", resourceLocation);
             });
 
-            // Ищем ресурсы в конкретной папке (geo, animations, textures/entity)
             resourceManager.listResources(path, fileName -> {
                 boolean matchesNamespace = fileName.getNamespace().equals("custommobsforge");
                 boolean matchesExtension = fileName.getPath().endsWith(extension);
@@ -142,7 +156,6 @@ public class ResourceConfig {
         try {
             LOGGER.info("Manually scanning path: {}", path);
 
-            // Пробуем получить доступ к ресурсам через ClassLoader
             ClassLoader classLoader = ResourceConfig.class.getClassLoader();
             java.net.URL resourceUrl = classLoader.getResource(path);
 
@@ -151,7 +164,6 @@ public class ResourceConfig {
                 return resources;
             }
 
-            // Если это JAR-файл, используем FileSystem для чтения
             if (resourceUrl.getProtocol().equals("jar")) {
                 String jarPath = resourceUrl.getPath().substring(5, resourceUrl.getPath().indexOf("!"));
                 try (FileSystem fileSystem = FileSystems.newFileSystem(Paths.get(jarPath), classLoader)) {
@@ -170,7 +182,6 @@ public class ResourceConfig {
                     }
                 }
             } else {
-                // Если это файловая система (например, при разработке)
                 Path resourcePath = Paths.get(resourceUrl.toURI());
                 try (Stream<Path> paths = Files.walk(resourcePath)) {
                     paths.filter(Files::isRegularFile)
