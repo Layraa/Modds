@@ -14,10 +14,9 @@ public class ClientSetup {
     @SubscribeEvent
     public static void registerRenderers(final EntityRenderersEvent.RegisterRenderers event) {
         RegistryObject<?> customMobRegistry = CustomMobsForge.registerCustomMob();
-        if (customMobRegistry.isPresent()) {
-            event.registerEntityRenderer(CustomMobsForge.registerCustomMob().get(), CustomMobRenderer::new);
-        } else {
+        if (!customMobRegistry.isPresent()) {
             throw new IllegalStateException("CustomMob entity is not registered! Ensure the entity is properly registered in CustomMobsForge.");
         }
+        event.registerEntityRenderer(CustomMobsForge.registerCustomMob().get(), CustomMobRenderer::new);
     }
 }

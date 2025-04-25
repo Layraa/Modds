@@ -1,10 +1,7 @@
 package com.custommobsforge.custommobsforge.server;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.minecraft.network.FriendlyByteBuf;
+import io.netty.buffer.Unpooled;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,8 +13,7 @@ import java.util.stream.Stream;
 
 public class ResourceConfig {
     private static final Logger LOGGER = LogManager.getLogger("CustomMobsForge");
-    private static final File CONFIG_FILE = new File("config/custommobsforge/resources.json");
-    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final File CONFIG_FILE = new File("config/custommobsforge/resources.bin");
     private static ResourceConfig instance;
 
     public static class ResourceEntry {
@@ -27,6 +23,15 @@ public class ResourceConfig {
         public ResourceEntry(String id, String path) {
             this.id = id;
             this.path = path;
+        }
+
+        public void writeToBuf(FriendlyByteBuf buf) {
+            buf.writeUtf(id);
+            buf.writeUtf(path);
+        }
+
+        public static ResourceEntry readFromBuf(FriendlyByteBuf buf) {
+            return new ResourceEntry(buf.readUtf(), buf.readUtf());
         }
 
         @Override
@@ -52,103 +57,52 @@ public class ResourceConfig {
 
         instance = new ResourceConfig();
 
-        // Пробуем загрузить данные из файла
         if (CONFIG_FILE.exists()) {
-            try (Reader reader = new FileReader(CONFIG_FILE)) {
-                ResourceConfig loadedConfig = GSON.fromJson(reader, ResourceConfig.class);
-                if (loadedConfig != null) {
-                    instance.models = loadedConfig.models != null ? loadedConfig.models : new ArrayList<>();
-                    instance.animations = loadedConfig.animations != null ? loadedConfig.animations : new ArrayList<>();
-                    instance.textures = loadedConfig.textures != null ? loadedConfig.textures : new ArrayList<>();
-                    LOGGER.info("Loaded resources from config file: {}", CONFIG_FILE.getPath());
-                    LOGGER.info("Loaded {} models: {}", instance.models.size(), instance.models);
-                    LOGGER.info("Loaded {} animations: {}", instance.animations.size(), instance.animations);
-                    LOGGER.info("Loaded {} textures: {}", instance.textures.size(), instance.textures);
-                    return; // Если файл успешно загружен, пропускаем сканирование
+            try (DataInputStream input = new DataInputStream(new FileInputStream(CONFIG_FILE))) {
+                byte[] bytes = new byte[input.available()];
+                input.readFully(bytes);
+                FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.wrappedBuffer(bytes));
+                if (buf.readableBytes() < 4) {
+                    throw new IOException("File is too small to contain valid data");
                 }
-            } catch (IOException e) {
-                LOGGER.error("Failed to load resources config from file: {}", CONFIG_FILE.getPath(), e);
+                instance.models = readResourceList(buf);
+                if (buf.readableBytes() < 4) {
+                    throw new IOException("Not enough data for animations list");
+                }
+                instance.animations = readResourceList(buf);
+                if (buf.readableBytes() < 4) {
+                    throw new IOException("Not enough data for textures list");
+                }
+                instance.textures = readResourceList(buf);
+                LOGGER.info("Loaded resources from config file: {}", CONFIG_FILE.getPath());
+                LOGGER.info("Loaded {} models: {}", instance.models.size(), instance.models);
+                LOGGER.info("Loaded {} animations: {}", instance.animations.size(), instance.animations);
+                LOGGER.info("Loaded {} textures: {}", instance.textures.size(), instance.textures);
+                return;
+            } catch (Exception e) {
+                LOGGER.error("Failed to load resources config from file: {}. Recreating file.", CONFIG_FILE.getPath(), e);
+                if (CONFIG_FILE.delete()) {
+                    LOGGER.info("Deleted corrupted resources.bin");
+                } else {
+                    LOGGER.warn("Failed to delete corrupted resources.bin");
+                }
             }
         }
 
-        // Если файла нет или загрузка не удалась, сканируем ресурсы
         scanResourceFolders();
         saveConfig();
-
         LOGGER.info("Initialized resources config: {}", CONFIG_FILE.getPath());
     }
 
     private static void scanResourceFolders() {
-        if (ServerLifecycleHooks.getCurrentServer() == null) {
-            LOGGER.error("Cannot scan resources: MinecraftServer is not available. Ensure this is called after server initialization.");
-            return;
-        }
-
-        ResourceManager resourceManager = ServerLifecycleHooks.getCurrentServer().getResourceManager();
-        LOGGER.info("ResourceManager: {}", resourceManager.getClass().getSimpleName());
-        LOGGER.info("Available namespaces: {}", resourceManager.getNamespaces());
-
-        instance.models = scanResources(resourceManager, "geo", ".geo.json");
-        if (instance.models.isEmpty()) {
-            LOGGER.warn("ResourceManager failed to find models, attempting manual scan...");
-            instance.models = scanResourcesManually("assets/custommobsforge/geo", ".geo.json");
-        }
+        instance.models = scanResourcesManually("assets/custommobsforge/geo", ".geo.json");
         LOGGER.info("Found {} models: {}", instance.models.size(), instance.models);
 
-        instance.animations = scanResources(resourceManager, "animations", ".animation.json");
-        if (instance.animations.isEmpty()) {
-            LOGGER.warn("ResourceManager failed to find animations, attempting manual scan...");
-            instance.animations = scanResourcesManually("assets/custommobsforge/animations", ".animation.json");
-        }
+        instance.animations = scanResourcesManually("assets/custommobsforge/animations", ".animation.json");
         LOGGER.info("Found {} animations: {}", instance.animations.size(), instance.animations);
 
-        instance.textures = scanResources(resourceManager, "textures/entity", ".png");
-        if (instance.textures.isEmpty()) {
-            LOGGER.warn("ResourceManager failed to find textures, attempting manual scan...");
-            instance.textures = scanResourcesManually("assets/custommobsforge/textures/entity", ".png");
-        }
+        instance.textures = scanResourcesManually("assets/custommobsforge/textures/entity", ".png");
         LOGGER.info("Found {} textures: {}", instance.textures.size(), instance.textures);
-    }
-
-    private static List<ResourceEntry> scanResources(ResourceManager resourceManager, String path, String extension) {
-        List<ResourceEntry> resources = new ArrayList<>();
-        try {
-            LOGGER.info("Scanning path with ResourceManager: assets/custommobsforge/{}", path);
-
-            resourceManager.listResources("", fileName -> {
-                if (fileName.getNamespace().equals("custommobsforge")) {
-                    LOGGER.debug("Found resource in custommobsforge namespace: {}", fileName);
-                }
-                return fileName.getNamespace().equals("custommobsforge");
-            }).forEach((resourceLocation, resource) -> {
-                LOGGER.debug("Resource: {}", resourceLocation);
-            });
-
-            resourceManager.listResources(path, fileName -> {
-                boolean matchesNamespace = fileName.getNamespace().equals("custommobsforge");
-                boolean matchesExtension = fileName.getPath().endsWith(extension);
-                LOGGER.debug("Checking resource: {} (namespace match: {}, extension match: {})",
-                        fileName, matchesNamespace, matchesExtension);
-                return matchesNamespace && matchesExtension;
-            }).forEach((resourceLocation, resource) -> {
-                String resourcePath = resourceLocation.getPath();
-                LOGGER.debug("Found resource path: {}", resourcePath);
-                if (resourcePath.endsWith(extension)) {
-                    String fileName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
-                    String id = fileName.substring(0, fileName.lastIndexOf(extension));
-                    String fullResourcePath = "custommobsforge:" + resourcePath;
-                    resources.add(new ResourceEntry(id, fullResourcePath));
-                    LOGGER.info("Added resource: id={}, path={}", id, fullResourcePath);
-                }
-            });
-
-            if (resources.isEmpty()) {
-                LOGGER.warn("No resources found in path: assets/custommobsforge/{} with extension: {}", path, extension);
-            }
-        } catch (Exception e) {
-            LOGGER.error("Failed to scan resources in path: assets/custommobsforge/{}", path, e);
-        }
-        return resources;
     }
 
     private static List<ResourceEntry> scanResourcesManually(String path, String extension) {
@@ -210,19 +164,59 @@ public class ResourceConfig {
         try {
             File parentDir = CONFIG_FILE.getParentFile();
             if (!parentDir.exists()) {
-                if (parentDir.mkdirs()) {
-                    LOGGER.info("Created config directory: {}", parentDir.getPath());
-                } else {
-                    LOGGER.error("Failed to create config directory: {}", parentDir.getPath());
-                }
+                parentDir.mkdirs();
             }
-            try (Writer writer = new FileWriter(CONFIG_FILE)) {
-                GSON.toJson(instance, writer);
+            try (DataOutputStream output = new DataOutputStream(new FileOutputStream(CONFIG_FILE))) {
+                FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+                writeResourceList(buf, instance.models);
+                writeResourceList(buf, instance.animations);
+                writeResourceList(buf, instance.textures);
+                output.write(buf.array(), 0, buf.readableBytes());
                 LOGGER.info("Saved resources config to: {}", CONFIG_FILE.getPath());
             }
         } catch (IOException e) {
             LOGGER.error("Failed to save resources config", e);
         }
+    }
+
+    private static void writeResourceList(FriendlyByteBuf buf, List<ResourceEntry> resources) {
+        buf.writeInt(resources.size());
+        for (ResourceEntry entry : resources) {
+            entry.writeToBuf(buf);
+        }
+    }
+
+    private static List<ResourceEntry> readResourceList(FriendlyByteBuf buf) {
+        int size = buf.readInt();
+        if (size < 0) {
+            throw new IllegalArgumentException("Invalid resource list size: " + size);
+        }
+        List<ResourceEntry> resources = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            if (buf.readableBytes() < 2) {
+                throw new IllegalArgumentException("Not enough data to read resource entry at index " + i);
+            }
+            resources.add(ResourceEntry.readFromBuf(buf));
+        }
+        return resources;
+    }
+
+    public static boolean validateResources(String model, String animation, String texture) {
+        boolean modelValid = instance.models.stream().anyMatch(entry -> entry.id.equals(model));
+        boolean animationValid = instance.animations.stream().anyMatch(entry -> entry.id.equals(animation));
+        boolean textureValid = instance.textures.stream().anyMatch(entry -> entry.id.equals(texture));
+
+        if (!modelValid) {
+            LOGGER.warn("Model not found on server: {}", model);
+        }
+        if (!animationValid) {
+            LOGGER.warn("Animation not found on server: {}", animation);
+        }
+        if (!textureValid) {
+            LOGGER.warn("Texture not found on server: {}", texture);
+        }
+
+        return modelValid && animationValid && textureValid;
     }
 
     public static ResourceConfig getInstance() {

@@ -1,9 +1,6 @@
 package com.custommobsforge.custommobsforge.common.preset;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
 
 public class PresetDeletePacket {
     private final String presetName;

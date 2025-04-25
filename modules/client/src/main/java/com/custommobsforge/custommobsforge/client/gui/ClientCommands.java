@@ -17,6 +17,10 @@ public class ClientCommands {
         dispatcher.register(
                 LiteralArgumentBuilder.<CommandSourceStack>literal("custommobs")
                         .executes(context -> {
+                            if (Minecraft.getInstance().getConnection() == null) {
+                                context.getSource().sendFailure(Component.literal("This command can only be used on a server."));
+                                return 0;
+                            }
                             Minecraft.getInstance().setScreen(new PresetGui());
                             return 1;
                         })
@@ -27,6 +31,10 @@ public class ClientCommands {
                 LiteralArgumentBuilder.<CommandSourceStack>literal("spawnmob")
                         .then(Commands.argument("preset", MessageArgument.message())
                                 .executes(context -> {
+                                    if (Minecraft.getInstance().getConnection() == null) {
+                                        context.getSource().sendFailure(Component.literal("This command can only be used on a server."));
+                                        return 0;
+                                    }
                                     String presetName = MessageArgument.getMessage(context, "preset").getString();
                                     try {
                                         if (Minecraft.getInstance().player != null) {
@@ -39,7 +47,7 @@ public class ClientCommands {
                                             return 0;
                                         }
                                     } catch (Exception e) {
-                                        CustomMobsForge.LOGGER.error("Failed to execute spawnmob command", e);
+                                        CustomMobsForge.LOGGER.error("Failed to execute spawnmob command: " + e.getMessage(), e);
                                         context.getSource().sendFailure(Component.literal("Error spawning mob: " + e.getMessage()));
                                         return 0;
                                     }

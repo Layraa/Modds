@@ -3,7 +3,7 @@ loaderVersion="[47,)"
 license="All Rights Reserved"
 
 [[mods]]
-modId="custommobsforge"
+modId="custommobsforge_client"
 version="1.0.0"
 displayName="Custom Mobs Forge Client"
 description="Client-side mod for Custom Mobs Forge."

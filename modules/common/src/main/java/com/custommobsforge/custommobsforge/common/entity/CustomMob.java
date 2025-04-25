@@ -1,5 +1,6 @@
 package com.custommobsforge.custommobsforge.common.entity;
 
+import com.custommobsforge.custommobsforge.common.CustomMobsForge;
 import com.custommobsforge.custommobsforge.common.preset.Preset;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -34,29 +35,21 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 import javax.annotation.Nullable;
 
 public class CustomMob extends PathfinderMob implements GeoAnimatable {
-    private static final EntityDataAccessor<String> PRESET_NAME = SynchedEntityData.defineId(CustomMob.class, EntityDataSerializers.STRING);
+    public static final EntityDataAccessor<String> PRESET_NAME_ACCESSOR = SynchedEntityData.defineId(CustomMob.class, EntityDataSerializers.STRING);
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private Preset preset;
     private float scale;
-    private boolean attributesInitialized = false;
-
-    // Добавляем статический блок для проверки версии
-    static {
-        System.out.println("CustomMob.java version: 2025-04-24 with preset synchronization");
-    }
+    private String behaviorLowerCase;
 
     public CustomMob(EntityType<? extends PathfinderMob> type, Level level, Preset preset) {
         super(type, level);
-        System.out.println("CustomMob constructor called with preset: " + (preset != null ? preset.getName() : "null"));
-        System.out.println("EntityType: " + type);
-        System.out.println("Level: " + level);
-        System.out.println("Preset size: " + (preset != null ? preset.getSize() : "null"));
         this.preset = preset;
         this.scale = preset != null ? preset.getSize() : 1.0F;
         if (preset != null) {
-            this.entityData.set(PRESET_NAME, preset.getName());
+            this.entityData.set(PRESET_NAME_ACCESSOR, preset.getName());
+            this.behaviorLowerCase = preset.getBehavior().toLowerCase();
         }
-        System.out.println("CustomMob constructor completed");
+        CustomMobsForge.LOGGER.debug("CustomMob created with preset: {}", preset != null ? preset.getName() : "null");
     }
 
     public CustomMob(EntityType<? extends PathfinderMob> type, Level level) {
@@ -66,7 +59,7 @@ public class CustomMob extends PathfinderMob implements GeoAnimatable {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(PRESET_NAME, "");
+        this.entityData.define(PRESET_NAME_ACCESSOR, "");
     }
 
     @Override
@@ -82,38 +75,33 @@ public class CustomMob extends PathfinderMob implements GeoAnimatable {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         String presetName = tag.getString("PresetName");
-        this.entityData.set(PRESET_NAME, presetName);
-        // На клиенте preset будет установлен позже через синхронизацию
+        this.entityData.set(PRESET_NAME_ACCESSOR, presetName);
         this.scale = tag.getFloat("Scale");
     }
 
-    // Метод для установки пресета
     public void setCustomPreset(Preset preset) {
-        System.out.println("CustomMob.setCustomPreset called with preset: " + (preset != null ? preset.getName() : "null"));
         this.preset = preset;
         if (preset != null) {
-            this.entityData.set(PRESET_NAME, preset.getName());
+            this.entityData.set(PRESET_NAME_ACCESSOR, preset.getName());
             this.scale = preset.getSize();
-            // Если атрибуты уже инициализированы, обновляем их
-            if (attributesInitialized) {
-                this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(preset.getHp());
-                this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(preset.getSpeed());
-                this.setHealth(this.getMaxHealth());
-                this.refreshDimensions();
-            }
+            this.behaviorLowerCase = preset.getBehavior().toLowerCase();
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(preset.getHp());
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(preset.getSpeed());
+            this.setHealth(this.getMaxHealth());
+            this.refreshDimensions();
         } else {
-            this.entityData.set(PRESET_NAME, "");
+            this.entityData.set(PRESET_NAME_ACCESSOR, "");
+            this.behaviorLowerCase = null;
         }
+        CustomMobsForge.LOGGER.debug("Set preset for CustomMob: {}", preset != null ? preset.getName() : "null");
     }
 
-    // Метод для получения пресета
     public Preset getPreset() {
         return preset;
     }
 
-    // Метод для получения имени пресета (для синхронизации)
     public String getPresetName() {
-        return this.entityData.get(PRESET_NAME);
+        return this.entityData.get(PRESET_NAME_ACCESSOR);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -125,13 +113,12 @@ public class CustomMob extends PathfinderMob implements GeoAnimatable {
 
     @Override
     protected void registerGoals() {
-        System.out.println("CustomMob.registerGoals called");
         this.goalSelector.addGoal(0, new FloatGoal(this));
         if (preset == null) {
-            System.out.println("Preset is null in registerGoals, using default behavior (neutral)");
             this.goalSelector.addGoal(1, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+            CustomMobsForge.LOGGER.debug("Preset is null, using default neutral behavior");
         } else {
-            switch (preset.getBehavior().toLowerCase()) {
+            switch (behaviorLowerCase) {
                 case "aggressive":
                     this.goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.0D, true));
                     this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
@@ -154,17 +141,12 @@ public class CustomMob extends PathfinderMob implements GeoAnimatable {
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag dataTag) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, reason, spawnData, dataTag);
-        System.out.println("CustomMob.finalizeSpawn called");
-        System.out.println("AttributeSupplier in finalizeSpawn: " + (this.getAttributes() != null));
         if (preset != null) {
-            System.out.println("Setting attributes from preset: HP=" + preset.getHp() + ", Speed=" + preset.getSpeed());
             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(preset.getHp());
             this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(preset.getSpeed());
             this.setHealth(this.getMaxHealth());
-        } else {
-            System.out.println("Preset is null in finalizeSpawn, using default attributes");
+            CustomMobsForge.LOGGER.debug("Set attributes from preset: HP={}, Speed={}", preset.getHp(), preset.getSpeed());
         }
-        this.attributesInitialized = true;
         this.refreshDimensions();
         return result;
     }
@@ -173,7 +155,7 @@ public class CustomMob extends PathfinderMob implements GeoAnimatable {
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>(this, "controller", 0, state -> {
             try {
-                if (preset != null && preset.getBehavior().equalsIgnoreCase("aggressive") && this.getTarget() != null) {
+                if (preset != null && behaviorLowerCase.equals("aggressive") && this.getTarget() != null) {
                     return state.setAndContinue(RawAnimation.begin().thenPlay("animation.custommob.attack"));
                 }
                 return state.setAndContinue(RawAnimation.begin().thenPlay("animation.custommob.walk"));
@@ -194,11 +176,9 @@ public class CustomMob extends PathfinderMob implements GeoAnimatable {
     }
 
     public void setScale(float scale) {
-        System.out.println("CustomMob.setScale called with scale: " + scale);
         this.scale = scale;
-        if (attributesInitialized) {
-            this.refreshDimensions();
-        }
+        this.refreshDimensions();
+        CustomMobsForge.LOGGER.debug("Set scale for CustomMob: {}", scale);
     }
 
     public float getScale() {
@@ -219,6 +199,6 @@ public class CustomMob extends PathfinderMob implements GeoAnimatable {
     @Override
     public void onAddedToWorld() {
         super.onAddedToWorld();
-        System.out.println("CustomMob.onAddedToWorld called");
+        CustomMobsForge.LOGGER.debug("CustomMob added to world");
     }
 }

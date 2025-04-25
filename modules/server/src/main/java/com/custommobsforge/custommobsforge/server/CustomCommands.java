@@ -1,7 +1,6 @@
 package com.custommobsforge.custommobsforge.server;
 
 import com.custommobsforge.custommobsforge.common.preset.Preset;
-import com.custommobsforge.custommobsforge.server.PresetManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.CommandSourceStack;
@@ -20,11 +19,7 @@ public class CustomCommands {
                                     CommandSourceStack source = context.getSource();
                                     Player player = source.getPlayerOrException();
 
-                                    Preset preset = PresetManager.getPresets().stream()
-                                            .filter(p -> p.getName().equals(presetName))
-                                            .findFirst()
-                                            .orElse(null);
-
+                                    Preset preset = PresetManager.getPreset(presetName);
                                     if (preset == null) {
                                         source.sendFailure(Component.literal("Preset not found: " + presetName));
                                         return 0;
