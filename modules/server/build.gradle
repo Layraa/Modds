@@ -28,10 +28,17 @@ minecraft {
     }
 }
 
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+    maven { url 'https://maven.azuredoom.com/mods' } // Добавлен репозиторий AzureLib
+    maven { url 'https://maven.minecraftforge.net' }
+}
+
 dependencies {
     minecraft "net.minecraftforge:forge:1.20.1-47.4.0"
     implementation project(':common')
-    implementation fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.7.1.2')
+    implementation fg.deobf("mod.azure.azurelib:azurelib-forge-1.20.1:1.0.29")
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -40,7 +47,7 @@ tasks.withType(JavaCompile).configureEach {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'com.custommobsforge.custommobsforge.server.ServerCustomMobsForge'
+        attributes 'Main-Class': 'com.custommobsforge.custommobsforge.server.CustomMobsForgeServer'
     }
 }
 

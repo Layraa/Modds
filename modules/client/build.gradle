@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'net.minecraftforge.gradle'
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 java {
@@ -17,38 +18,59 @@ minecraft {
             workingDirectory project.file('run')
             property 'forge.logging.console.level', 'debug'
             mods {
-                custommobsforge_common {
-                    source project(':common').sourceSets.main
-                }
                 custommobsforge {
                     source sourceSets.main
-                }
-                custommobsforge_server {
-                    source project(':server').sourceSets.main
                 }
             }
         }
     }
 }
 
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }            // ImGui-Java + AzureLib
+    maven { url 'https://maven.azuredoom.com/mods' } // AzureLib репозиторий
+    maven { url 'https://maven.minecraftforge.net' }  // ForgeGradle
+}
+
 dependencies {
     minecraft "net.minecraftforge:forge:1.20.1-47.4.0"
     implementation project(':common')
-    implementation fg.deobf('software.bernie.geckolib:geckolib-forge-1.20.1:4.7.1.2')
+
+    // AzureLib для Forge 1.20.1
+    implementation fg.deobf("mod.azure.azurelib:azurelib-forge-1.20.1:1.0.29")
+
+    // ImGui-Java 1.89.0
+    implementation fg.deobf("io.github.spair:imgui-java-app:1.89.0")
+    runtimeOnly fg.deobf("io.github.spair:imgui-java-natives-windows:1.89.0")
+    runtimeOnly fg.deobf("io.github.spair:imgui-java-natives-linux:1.89.0")
+    runtimeOnly fg.deobf("io.github.spair:imgui-java-natives-macos:1.89.0")
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.release = 17
 }
 
-jar {
-    manifest {
-        attributes 'Main-Class': 'com.custommobsforge.custommobsforge.client.ClientCustomMobsForge'
+// ShadowJar: включаем GUI и нативные библиотеки в fat-JAR
+shadowJar {
+    dependencies {
+        include(dependency("io.github.spair:imgui-java-app:1.89.0"))
+        include(dependency("io.github.spair:imgui-java-natives-windows:1.89.0"))
+        include(dependency("io.github.spair:imgui-java-natives-linux:1.89.0"))
+        include(dependency("io.github.spair:imgui-java-natives-macos:1.89.0"))
     }
+    relocate 'imgui.binding', 'com.custommobsforge.client.gui.binding'
+    archiveFileName = "${project.name}-${project.version}-all.jar"
 }
 
+artifacts {
+    archives shadowJar
+}
+
+// Диагностика зависимостей
 task printDependencies {
     doLast {
-        println "Dependencies for client: ${configurations.compileClasspath.collect { it.name }}"
+        println "Client compileClasspath: ${configurations.compileClasspath.files}"
     }
 }
