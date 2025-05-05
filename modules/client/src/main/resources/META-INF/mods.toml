@@ -3,12 +3,12 @@ loaderVersion="[47,)"
 license="All Rights Reserved"
 
 [[mods]]
-modId="custommobsforge_server"
+modId="custommobsforge_client"
 version="1.0.0"
-displayName="Custom Mobs Forge Server"
-description="Server-side mod for Custom Mobs Forge."
+displayName="Custom Mobs Forge Client"
+description="Client-side mod for Custom Mobs Forge."
 
-[[dependencies.custommobsforge_server]]
+[[dependencies.custommobsforge]]
 modId="custommobsforge_common"
 mandatory=true
 versionRange="[1.0.0,)"

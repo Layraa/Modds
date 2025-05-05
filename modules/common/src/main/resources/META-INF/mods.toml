@@ -1,69 +1,9 @@
 modLoader="javafml"
 loaderVersion="[47,)"
-license="ALL Rights Reserved"
-issueTrackerURL="https://example.com/issues"
+license="All Rights Reserved"
 
-# Мод для common (CustomMobsForge)
 [[mods]]
-modId="custommobsforge"
+modId="custommobsforge_common"
 version="1.0.0"
 displayName="Custom Mobs Forge Common"
-description="Common module for Custom Mobs Forge."
-authors="YourName"
-
-[[dependencies.custommobsforge]]
-modId="forge"
-mandatory=true
-versionRange="[47,)"
-ordering="NONE"
-side="BOTH"
-
-[[dependencies.custommobsforge]]
-modId="minecraft"
-mandatory=true
-versionRange="[1.20.1]"
-ordering="NONE"
-side="BOTH"
-
-[[dependencies.custommobsforge]]
-modId="geckolib"
-mandatory=true
-versionRange="[4.7.1.2,)"
-ordering="NONE"
-side="BOTH"
-
-# Мод для client (ClientCustomMobsForge)
-[[mods]]
-modId="custommobsforge_client"
-version="1.0.0"
-displayName="Custom Mobs Forge Client"
-description="Client module for Custom Mobs Forge."
-authors="YourName"
-
-[[dependencies.custommobsforge_client]]
-modId="forge"
-mandatory=true
-versionRange="[47,)"
-ordering="NONE"
-side="CLIENT"
-
-[[dependencies.custommobsforge_client]]
-modId="minecraft"
-mandatory=true
-versionRange="[1.20.1]"
-ordering="NONE"
-side="CLIENT"
-
-[[dependencies.custommobsforge_client]]
-modId="geckolib"
-mandatory=true
-versionRange="[4.7.1.2,)"
-ordering="NONE"
-side="CLIENT"
-
-[[dependencies.custommobsforge_client]]
-modId="custommobsforge"
-mandatory=true
-versionRange="[1.0.0,)"
-ordering="NONE"
-side="CLIENT"
+description="Common code for Custom Mobs Forge."
